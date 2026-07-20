@@ -1,0 +1,32 @@
+{
+  "name": "fish-kriegcc",
+  "version": "0.2.0",
+  "description": "Displays a small fish in your panel and does nothing useful whatsoever beyond that.",
+  "scripts": {
+    "dummy": "esbuild --bundle src/a.ts --outfile=../show-hide-applets@mohammad-sn/files/show-hide-applets@mohammad-sn/applet.js --platform=node --format=cjs",
+    "prebuild": "node scripts/set-version.cjs",
+    "watch": "webpack --watch",
+    "build": "webpack",
+    "lint": "eslint .",
+    "lint-fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format-check": "prettier --check ."
+  },
+  "author": "kriegcc",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@ci-types/cjs": "^6.0.2-5",
+    "@eslint/js": "^9.18.0",
+    "esbuild": "^0.28.1",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-no-relative-import-paths": "^1.6.1",
+    "prettier": "3.4.2",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  }
+}

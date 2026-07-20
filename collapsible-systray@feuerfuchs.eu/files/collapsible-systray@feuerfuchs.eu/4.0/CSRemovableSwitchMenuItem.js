@@ -1,19 +1,13 @@
-const Lang      = imports.lang;
 const St        = imports.gi.St;
-const Mainloop  = imports.mainloop;
 const PopupMenu = imports.ui.popupMenu;
 
 // ------------------------------------------------------------------------------------------------------
 
-function CSRemovableSwitchMenuItem(text, active, params) {
-    this._init(text, active, params);
-}
-
-CSRemovableSwitchMenuItem.prototype = {
-    __proto__: PopupMenu.PopupSwitchMenuItem.prototype,
-
-    _init: function(text, active, params) {
-        PopupMenu.PopupSwitchMenuItem.prototype._init.call(this, text, active, params);
+// A PopupSwitchMenuItem that also shows a "remove" button, used to let the user
+// delete saved entries for applications that are no longer running.
+class CSRemovableSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+    constructor(text, active, params) {
+        super(text, active, params);
 
         const iconDelete = new St.Icon({
             icon_name:   'edit-delete',
@@ -21,9 +15,11 @@ CSRemovableSwitchMenuItem.prototype = {
             style_class: 'popup-menu-icon'
         });
         this.deleteButton = new St.Button({ child: iconDelete });
-        this.deleteButton.connect('clicked', Lang.bind(this, this.remove));
+        this.deleteButton.connect('clicked', () => this.remove());
 
-        this._statusBin.remove_child(this._switch.actor);
+        // The base class puts the switch alone in a single-child St.Bin. Replace it
+        // with a horizontal box that holds both the switch and the delete button.
+        this._statusBin.child = null;
         this.removeActor(this._statusBin);
 
         this._statusBin = new St.BoxLayout({
@@ -32,15 +28,15 @@ CSRemovableSwitchMenuItem.prototype = {
             x_align:  St.Align.END
         });
         this.addActor(this._statusBin, { expand: true, span: -1, align: St.Align.END });
-        this._statusBin.add(this._switch.actor);
-        this._statusBin.add(this.deleteButton);
-    },
+        this._statusBin.add_child(this._switch.actor);
+        this._statusBin.add_child(this.deleteButton);
+    }
 
     /*
      * User clicked the "remove" button
      */
-    remove: function() {
+    remove() {
         this.emit('remove');
         this.destroy();
     }
-};
+}

@@ -70,7 +70,10 @@ class CSCollapseBtn {
      *
      */
     _setStyle() {
-        this.icon.set_icon_size(this._applet.icon_size);
+        // this._applet.icon_size is multiplied by global.ui_scale for sizing the
+        // XEmbed tray icons (real pixels). St.Icon expects a logical size that it
+        // scales internally, so use the unscaled panel icon size here.
+        this.icon.set_icon_size(this._applet.getPanelIconSize(St.IconType.SYMBOLIC));
         this.icon.set_style_class_name('system-status-icon');
     }
 

@@ -12,10 +12,20 @@
         "4.0",
         "4.2",
         "4.4",
-        "4.6"
+        "4.6",
+        "4.8",
+        "5.0",
+        "5.2",
+        "5.4",
+        "5.6",
+        "5.8",
+        "6.0",
+        "6.2",
+        "6.4",
+        "6.6"
     ], 
     "max-instances": 1, 
     "description": "A replacement for the abandoned System Tray Collapsible Cinnamon applet", 
-    "version": "1.22",
+    "version": "1.23",
     "name": "Collapsible Systray"
 }
