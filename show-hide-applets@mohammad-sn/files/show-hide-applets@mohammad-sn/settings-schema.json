@@ -71,7 +71,7 @@
   },
   "hideuntilseparator": {
     "type": "checkbox",
-    "default": false,
+    "default": true,
     "description": "Only hide until next separator",
     "tooltip": "Only hide everything until the next separator element occurs."
   }

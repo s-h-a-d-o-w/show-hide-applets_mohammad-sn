@@ -38,6 +38,7 @@ var Main = imports.ui.main;
 var Gio = imports.gi.Gio;
 var UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
+var ICON_SWITCH_STORE_DURATION = 5 * 60 * 1e3;
 function _(str) {
   return gettext.dgettext(UUID, str);
 }
@@ -46,7 +47,6 @@ var MyApplet = class extends Applet.IconApplet {
   orientation;
   _hideTimeoutId;
   _reshowingHideTimeoutId;
-  _showTimeoutId;
   // Settings-bound properties
   do_autohide;
   statusintooltip;
@@ -64,10 +64,15 @@ var MyApplet = class extends Applet.IconApplet {
   loadedPanel;
   monitor;
   signal_manager;
-  icons = [];
+  icons = {};
   // Menu items
-  itemAutohide;
-  panelEditMode;
+  menu_item_auto_hide;
+  menu_item_panel_edit_mode;
+  menu_items_icon_section;
+  // Connected signals
+  connected_on_panel_edit_mode_changed;
+  connected_on_entered;
+  connected_on_allocation_changed;
   constructor(metadata, orientation, panel_height, instance_id) {
     super(orientation, panel_height, instance_id);
     this.orientation = orientation;
@@ -78,14 +83,17 @@ var MyApplet = class extends Applet.IconApplet {
       if (this.is_vertical()) this.set_applet_icon_symbolic_name("1v");
       else this.set_applet_icon_symbolic_name("1");
       this.loadedPanel = this.panel;
-      this.update_icons();
       this.bind_settings();
-      this.create_popup_menu();
-      global.settings.connect(
+      this.connected_on_panel_edit_mode_changed = global.settings.connect(
         "changed::panel-edit-mode",
         Lang.bind(this, this.on_panel_edit_mode_changed)
       );
-      this.actor.connect("enter-event", Lang.bind(this, this._onEntered));
+      this.connected_on_entered = this.actor.connect(
+        // "enter-event" works but I can't find it in the cinnamon repo: https://github.com/search?q=repo%3Alinuxmint%2Fcinnamon%20enter-event&type=code
+        // @ts-expect-error
+        "enter-event",
+        Lang.bind(this, this.on_entered)
+      );
       this.do_hide = true;
       this.alreadyHidden = [];
       if (!this.disable_starttime_autohide || this.do_autohide) {
@@ -100,29 +108,44 @@ var MyApplet = class extends Applet.IconApplet {
         Mainloop.source_remove(this._reshowingHideTimeoutId);
         this._reshowingHideTimeoutId = null;
       }
-      this.get_our_panel_zone().connect(
-        "queue-relayout",
-        Lang.bind(
-          this,
-          Lang.bind(this, function() {
-            if (this.autohideReshowing && !this.do_hide) {
-              this._reshowingHideTimeoutId = Mainloop.timeout_add_seconds(
-                this.autohideReshowingTime,
-                Lang.bind(this, function() {
-                  if (!this.do_hide) {
-                    this.toggle_hiding(true);
-                    this.auto_hide(true);
-                  }
-                  return false;
-                })
-              );
-            }
-          })
-        )
+      Mainloop.timeout_add_seconds(
+        1,
+        Lang.bind(this, function() {
+          this.update_icons();
+          this.update_popup_menu();
+        })
+      );
+      this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
+        "allocation-changed",
+        () => {
+          this.on_allocation_changed();
+        }
       );
     } catch (e) {
       global.logError(e);
     }
+  }
+  auto_hide(update_already_hidden) {
+    let postpone = this.actor.hover && this.hover_activates;
+    let children = this.get_zone_children();
+    let p = children.indexOf(this.actor);
+    for (let i = 0; i < p; i++) {
+      postpone = postpone || children[i].hover;
+      if (children[i]._applet._menuManager)
+        postpone = postpone || children[i]._applet._menuManager._activeMenu;
+      if (children[i]._applet.menuManager)
+        postpone = postpone || children[i]._applet.menuManager._activeMenu;
+      if (postpone) break;
+    }
+    if (postpone)
+      this._hideTimeoutId = Mainloop.timeout_add_seconds(
+        this.hide_time,
+        Lang.bind(this, function() {
+          this.auto_hide(update_already_hidden);
+        })
+      );
+    else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode"))
+      this.toggle_hiding(update_already_hidden);
   }
   bind_settings() {
     this.settings = new Settings.AppletSettings(
@@ -139,8 +162,8 @@ var MyApplet = class extends Applet.IconApplet {
           Mainloop.source_remove(this._hideTimeoutId);
           this._hideTimeoutId = null;
         } else if (this.do_autohide && this.do_hide) this.auto_hide(true);
-        if (this.itemAutohide) {
-          this.itemAutohide["_switch"].setToggleState(this.do_autohide);
+        if (this.menu_item_auto_hide) {
+          this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
         }
       }),
       null
@@ -228,21 +251,23 @@ var MyApplet = class extends Applet.IconApplet {
       null
     );
   }
-  create_popup_menu() {
-    let editMode = global.settings.get_boolean("panel-edit-mode");
-    this.panelEditMode = new PopupMenu.PopupSwitchMenuItem(_("Panel Edit mode"), editMode);
-    this.panelEditMode.connect("toggled", function(item) {
-      global.settings.set_boolean("panel-edit-mode", item.state);
-    });
-    this._applet_context_menu.addMenuItem(this.panelEditMode);
-    this.itemAutohide = new PopupMenu.PopupSwitchMenuItem(_("Autohide"), this.do_autohide);
-    this.itemAutohide.connect(
-      "toggled",
-      Lang.bind(this, function() {
-        this.do_autohide = !this.do_autohide;
-      })
-    );
-    this._applet_context_menu.addMenuItem(this.itemAutohide);
+  get_eligible_children() {
+    let applets = this.get_zone_children();
+    let ourIndex = applets.indexOf(this.actor);
+    let eligible = [];
+    if (this.do_hide) {
+      for (let i = 0; i < ourIndex; i++) {
+        eligible.push(applets[i]);
+      }
+    } else {
+      for (let i = ourIndex - 1; i > -1; i--) {
+        if (this.hide_until_separator && applets[i]._applet._uuid == "separator@cinnamon.org") {
+          break;
+        }
+        eligible.push(applets[i]);
+      }
+    }
+    return eligible;
   }
   get_our_panel_zone() {
     if (this.locationLabel === "right") return this.loadedPanel["_rightBox"];
@@ -254,60 +279,82 @@ var MyApplet = class extends Applet.IconApplet {
   get_zone_children() {
     return this.get_our_panel_zone().get_children();
   }
-  update_icons() {
-    this.icons = [];
-    for (const childBoxLayout of this.get_zone_children()) {
-      const applet = childBoxLayout._applet;
-      if (applet._uuid === "xapp-status@cinnamon.org") {
-        Object.values(applet.statusIcons).forEach((icon) => {
-          const { name, icon_name } = icon.proxy;
-          if (name && icon_name) {
-            this.icons.push({
-              ownerUuid: applet._uuid,
-              name,
-              icon_name,
-              last_seen: Date.now()
-            });
+  is_vertical() {
+    return this.orientation == St.Side.LEFT || this.orientation == St.Side.RIGHT;
+  }
+  // create_icon_key(applet: any, name: string, icon_name?: string) {
+  //   if (applet._uuid === "xapp-status@cinnamon.org") {
+  //     return applet._uuid + name + icon_name;
+  //   } else if (applet._uuid === "systray@cinnamon.org") {
+  //     return applet._uuid + name;
+  //   } else {
+  //     return applet._meta.uuid + applet._meta.name + applet._meta.icon;
+  //   }
+  // }
+  on_allocation_changed() {
+    global.log("allocation-changed");
+    if (this.autohideReshowing && !this.do_hide) {
+      this._reshowingHideTimeoutId = Mainloop.timeout_add_seconds(
+        this.autohideReshowingTime,
+        Lang.bind(this, function() {
+          if (!this.do_hide) {
+            this.toggle_hiding(true);
+            this.auto_hide(true);
           }
-        });
-      } else if (applet._uuid === "systray@cinnamon.org") {
-        for (const j of childBoxLayout.get_first_child().get_children()) {
-          const icon = j.get_child();
-          this.icons.push({
-            ownerUuid: applet._uuid,
-            name: icon.title,
-            last_seen: Date.now()
-          });
-        }
-      } else {
-        this.icons.push({
-          ownerUuid: applet._meta.uuid,
-          name: applet._meta.name,
-          icon_name: applet._meta.icon,
-          last_seen: Date.now()
-        });
-      }
+          return false;
+        })
+      );
     }
-    Mainloop.timeout_add_seconds(
-      30,
-      Lang.bind(this, function() {
-        this.update_icons();
-      })
-    );
   }
   on_applet_clicked() {
     this.toggle_hiding(true);
     return true;
   }
-  _onEntered() {
+  on_entered() {
     if (!this.actor.hover && this.hover_activates && !global.settings.get_boolean("panel-edit-mode"))
-      this._showTimeoutId = Mainloop.timeout_add(
+      Mainloop.timeout_add(
         this.hover_time,
         Lang.bind(this, function() {
           if (this.actor.hover && (this.hover_activates_hide || !this.do_hide))
             this.toggle_hiding(true);
         })
       );
+  }
+  on_applet_removed_from_panel() {
+    global.log("on_applet_removed_from_panel");
+    if (!this.do_hide) {
+      this.toggle_hiding(true);
+    }
+    if (this.connected_on_panel_edit_mode_changed) {
+      global.settings.disconnect(this.connected_on_panel_edit_mode_changed);
+    }
+    if (this.connected_on_entered) {
+      this.actor.disconnect(this.connected_on_entered);
+    }
+    if (this.connected_on_allocation_changed) {
+      this.get_our_panel_zone().disconnect(this.connected_on_allocation_changed);
+    }
+  }
+  on_applet_middle_clicked() {
+    this.do_autohide = !this.do_autohide;
+    if (this.menu_item_auto_hide) {
+      this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
+    }
+    this.toggle_hiding(this.do_autohide);
+    return true;
+  }
+  on_panel_edit_mode_changed() {
+    this.menu_item_panel_edit_mode.setToggleState(global.settings.get_boolean("panel-edit-mode"));
+    if (global.settings.get_boolean("panel-edit-mode")) {
+      if (!this.do_hide) {
+        this.toggle_hiding(true);
+      }
+    } else if (this.do_hide) {
+      this.toggle_hiding(true);
+    }
+  }
+  on_orientation_changed(orientation) {
+    this.orientation = orientation;
   }
   toggle_hiding(update_already_hidden) {
     if (this._hideTimeoutId) {
@@ -364,56 +411,105 @@ var MyApplet = class extends Applet.IconApplet {
     }
     this.do_hide = !this.do_hide;
   }
-  on_panel_edit_mode_changed() {
-    this.panelEditMode.setToggleState(global.settings.get_boolean("panel-edit-mode"));
-    if (global.settings.get_boolean("panel-edit-mode")) {
-      if (!this.do_hide) {
-        this.toggle_hiding(true);
+  update_icons() {
+    for (const childBoxLayout of this.get_eligible_children()) {
+      const applet = childBoxLayout._applet;
+      if (applet._uuid === "xapp-status@cinnamon.org") {
+        Object.values(applet.statusIcons).forEach((icon) => {
+          const { name, icon_name } = icon.proxy;
+          if (!name || !icon_name) return;
+          const key = applet._uuid + name + icon_name;
+          this.icons[key] ??= {
+            ownerUuid: applet._uuid,
+            name,
+            icon_name,
+            last_seen: Date.now(),
+            show: false
+          };
+          this.icons[key].last_seen = Date.now();
+        });
+      } else if (applet._uuid === "systray@cinnamon.org") {
+        for (const j of childBoxLayout.get_first_child().get_children()) {
+          const icon = j.get_child();
+          const key = applet._uuid + icon.title;
+          this.icons[key] ??= {
+            ownerUuid: applet._uuid,
+            name: icon.title,
+            last_seen: Date.now(),
+            show: false
+          };
+          this.icons[key].last_seen = Date.now();
+        }
+      } else {
+        const { uuid, name, icon } = applet._meta;
+        const key = uuid + name + icon;
+        this.icons[key] ??= {
+          ownerUuid: uuid,
+          name,
+          icon_name: icon,
+          last_seen: Date.now(),
+          show: false
+        };
+        this.icons[key].last_seen = Date.now();
       }
-    } else if (this.do_hide) {
-      this.toggle_hiding(true);
     }
+    Object.entries(this.icons).forEach(([key, icon]) => {
+      if (Date.now() - icon.last_seen > ICON_SWITCH_STORE_DURATION) {
+        delete this.icons[key];
+      }
+    });
+    Mainloop.timeout_add_seconds(
+      30,
+      Lang.bind(this, function() {
+        this.update_icons();
+      })
+    );
   }
-  on_orientation_changed(orientation) {
-    this.orientation = orientation;
-  }
-  auto_hide(update_already_hidden) {
-    let postpone = this.actor.hover && this.hover_activates;
-    let children = this.get_zone_children();
-    let p = children.indexOf(this.actor);
-    for (let i = 0; i < p; i++) {
-      postpone = postpone || children[i].hover;
-      if (children[i]._applet._menuManager)
-        postpone = postpone || children[i]._applet._menuManager._activeMenu;
-      if (children[i]._applet.menuManager)
-        postpone = postpone || children[i]._applet.menuManager._activeMenu;
-      if (postpone) break;
+  update_popup_menu() {
+    if (!this._applet_context_menu.isOpen) {
+      if (!this.menu_items_icon_section) {
+        this.menu_items_icon_section = new PopupMenu.PopupMenuSection();
+        this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem(), 0);
+        this._applet_context_menu.addMenuItem(this.menu_items_icon_section, 0);
+        this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem(), 0);
+        this.menu_item_panel_edit_mode = new PopupMenu.PopupSwitchMenuItem(
+          _("Panel Edit mode"),
+          global.settings.get_boolean("panel-edit-mode")
+        );
+        this.menu_item_panel_edit_mode.connect("toggled", function(item) {
+          global.settings.set_boolean("panel-edit-mode", item.state);
+        });
+        this._applet_context_menu.addMenuItem(this.menu_item_panel_edit_mode, 0);
+        this.menu_item_auto_hide = new PopupMenu.PopupSwitchMenuItem(
+          _("Autohide"),
+          this.do_autohide
+        );
+        this.menu_item_auto_hide.connect(
+          "toggled",
+          Lang.bind(this, function() {
+            this.do_autohide = !this.do_autohide;
+          })
+        );
+        this._applet_context_menu.addMenuItem(this.menu_item_auto_hide, 0);
+      }
+      this.menu_items_icon_section.removeAll();
+      Object.entries(this.icons).forEach(([key, { name, show, icon_name }]) => {
+        const iconToggle = icon_name && !icon_name.includes("/") ? new PopupMenu.PopupSwitchIconMenuItem(name, show, icon_name, St.IconType.SYMBOLIC) : new PopupMenu.PopupSwitchMenuItem(name, show);
+        iconToggle.connect(
+          "toggled",
+          Lang.bind(this, function() {
+            this.icons[key].show = !this.icons[key].show;
+          })
+        );
+        this.menu_items_icon_section.addMenuItem(iconToggle);
+      });
     }
-    if (postpone)
-      this._hideTimeoutId = Mainloop.timeout_add_seconds(
-        this.hide_time,
-        Lang.bind(this, function() {
-          this.auto_hide(update_already_hidden);
-        })
-      );
-    else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode"))
-      this.toggle_hiding(update_already_hidden);
-  }
-  on_applet_removed_from_panel() {
-    if (!this.do_hide) {
-      this.toggle_hiding(true);
-    }
-  }
-  on_applet_middle_clicked() {
-    this.do_autohide = !this.do_autohide;
-    if (this.itemAutohide) {
-      this.itemAutohide["_switch"].setToggleState(this.do_autohide);
-    }
-    this.toggle_hiding(this.do_autohide);
-    return true;
-  }
-  is_vertical() {
-    return this.orientation == St.Side.LEFT || this.orientation == St.Side.RIGHT;
+    Mainloop.timeout_add_seconds(
+      30,
+      Lang.bind(this, function() {
+        this.update_popup_menu();
+      })
+    );
   }
 };
 function main(metadata, orientation, panel_height, instance_id) {
