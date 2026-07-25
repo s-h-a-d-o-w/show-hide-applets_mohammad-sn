@@ -126,6 +126,9 @@ var MyApplet = class extends Applet.IconApplet {
     }
   }
   auto_hide(update_already_hidden) {
+    if (this._hideTimeoutId) {
+      return;
+    }
     let postpone = this.actor.hover && this.hover_activates;
     let children = this.get_zone_children();
     let p = children.indexOf(this.actor);
@@ -137,15 +140,16 @@ var MyApplet = class extends Applet.IconApplet {
         postpone = postpone || children[i]._applet.menuManager._activeMenu;
       if (postpone) break;
     }
-    if (postpone)
+    if (postpone) {
       this._hideTimeoutId = Mainloop.timeout_add_seconds(
         this.hide_time,
         Lang.bind(this, function() {
           this.auto_hide(update_already_hidden);
         })
       );
-    else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode"))
+    } else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode")) {
       this.toggle_hiding(update_already_hidden);
+    }
   }
   bind_settings() {
     this.settings = new Settings.AppletSettings(
@@ -282,17 +286,7 @@ var MyApplet = class extends Applet.IconApplet {
   is_vertical() {
     return this.orientation == St.Side.LEFT || this.orientation == St.Side.RIGHT;
   }
-  // create_icon_key(applet: any, name: string, icon_name?: string) {
-  //   if (applet._uuid === "xapp-status@cinnamon.org") {
-  //     return applet._uuid + name + icon_name;
-  //   } else if (applet._uuid === "systray@cinnamon.org") {
-  //     return applet._uuid + name;
-  //   } else {
-  //     return applet._meta.uuid + applet._meta.name + applet._meta.icon;
-  //   }
-  // }
   on_allocation_changed() {
-    global.log("allocation-changed");
     if (this.autohideReshowing && !this.do_hide) {
       this._reshowingHideTimeoutId = Mainloop.timeout_add_seconds(
         this.autohideReshowingTime,
@@ -372,15 +366,27 @@ var MyApplet = class extends Applet.IconApplet {
         if (applets[i]._applet._uuid == "systray@cinnamon.org") {
           const tray = applets[i];
           for (const j of tray.get_first_child().get_children()) {
-            j.set_size(0, 0);
+            j.hide();
           }
-          Mainloop.timeout_add(10, () => {
-            tray.hide();
-            return false;
-          });
           continue;
         } else if (this.hide_until_separator && applets[i]._applet._uuid == "separator@cinnamon.org") {
           break;
+        }
+        if (applets[i]._applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = applets[i]._applet.statusIcons;
+          for (const icon2 of Object.values(icons)) {
+            const { name: name2, icon_name } = icon2.proxy;
+            const key2 = applets[i]._applet._uuid + name2 + icon_name;
+            if (this.icons[key2] && this.icons[key2].show) {
+              continue;
+            }
+            icon2.actor.hide();
+          }
+        }
+        const { uuid, name, icon } = applets[i]._applet._meta;
+        const key = uuid + name + icon;
+        if (this.icons[key] && this.icons[key].show) {
+          continue;
         }
         applets[i].hide();
       }
@@ -392,8 +398,22 @@ var MyApplet = class extends Applet.IconApplet {
           applets[i].show();
         }
         if (applets[i]._applet._uuid == "systray@cinnamon.org") {
-          for (const j of applets[i].get_first_child().get_children()) {
-            j.set_size(20, 20);
+          const tray = applets[i];
+          try {
+            for (const j of tray.get_first_child().get_children()) {
+              j.show();
+            }
+          } catch (e) {
+            global.logError(e);
+          }
+        }
+        if (applets[i]._applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = applets[i]._applet.statusIcons;
+          for (const icon of Object.values(icons)) {
+            const { name, icon_name } = icon.proxy;
+            if (name.trim() !== "" && icon_name.trim() !== "") {
+              icon.actor.show();
+            }
           }
         }
       }
@@ -409,6 +429,7 @@ var MyApplet = class extends Applet.IconApplet {
       if (this.do_autohide) this.set_applet_tooltip(_("Autohide ON"));
       else this.set_applet_tooltip(_("Autohide OFF"));
     }
+    global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
     this.do_hide = !this.do_hide;
   }
   update_icons() {
@@ -417,7 +438,7 @@ var MyApplet = class extends Applet.IconApplet {
       if (applet._uuid === "xapp-status@cinnamon.org") {
         Object.values(applet.statusIcons).forEach((icon) => {
           const { name, icon_name } = icon.proxy;
-          if (!name || !icon_name) return;
+          if (name.trim() === "" || icon_name.trim() === "") return;
           const key = applet._uuid + name + icon_name;
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
