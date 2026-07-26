@@ -1,0 +1,10 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  "features": {
+    "ghcr.io/s-h-a-d-o-w/devcontainers-features/js-base": {},
+    "ghcr.io/devcontainers-extra/features/apt-get-packages": {
+      "packages": ["gettext", "intltool", "python3-polib"]
+    }
+  },
+  "postCreateCommand": "mkdir -p \"$HOME/.local/bin\" && curl -fsSL -o \"$HOME/.local/bin/cinnamon-xlet-makepot\" https://raw.githubusercontent.com/linuxmint/cinnamon/master/files/usr/bin/cinnamon-xlet-makepot && chmod +x \"$HOME/.local/bin/cinnamon-xlet-makepot\""
+}
