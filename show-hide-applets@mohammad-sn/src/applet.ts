@@ -3,15 +3,10 @@ const Lang = imports.lang;
 const Gtk = imports.gi.Gtk;
 const Settings = imports.ui.settings;
 const PopupMenu = imports.ui.popupMenu;
-const Mainloop = imports.mainloop;
-const Util = imports.misc.util;
 const St = imports.gi.St;
 const GLib = imports.gi.GLib;
 const gettext = imports.gettext;
-const XApp = imports.gi.XApp;
-type StatusIcon = imports.gi.XApp.StatusIcon;
 type StatusIconInterfaceProxy = imports.gi.XApp.StatusIconInterfaceProxy;
-const Main = imports.ui.main;
 const Gio = imports.gi.Gio;
 
 const UUID = "show-hide-applets@mohammad-sn";
@@ -33,21 +28,43 @@ declare global {
   }
 }
 
-function listAllProps(obj: any): string[] {
-  const seen = new Set();
-  const out = [];
+// function listAllProps(obj: any): string[] {
+//   const seen = new Set();
+//   const out = [];
 
-  while (obj && obj !== Object.prototype) {
-    for (const name of Object.getOwnPropertyNames(obj)) {
-      if (!seen.has(name)) {
-        seen.add(name);
-        out.push(name);
-      }
-    }
-    obj = Object.getPrototypeOf(obj);
-  }
+//   while (obj && obj !== Object.prototype) {
+//     for (const name of Object.getOwnPropertyNames(obj)) {
+//       if (!seen.has(name)) {
+//         seen.add(name);
+//         out.push(name);
+//       }
+//     }
+//     obj = Object.getPrototypeOf(obj);
+//   }
 
-  return out;
+//   return out;
+// }
+
+/**
+ * Polyfill for GLib.timeout_add_once (not in Cinnamon 6.6.9's GLib version).
+ * Calls `callback` once after `interval` milliseconds, then removes the source.
+ */
+function timeout_add_once(interval: number, callback: () => void): number {
+  return GLib.timeout_add(GLib.PRIORITY_DEFAULT, interval, () => {
+    callback();
+    return GLib.SOURCE_REMOVE;
+  });
+}
+
+/**
+ * Polyfill for timeout_add_seconds_once (not in Cinnamon 6.6.9's GLib version).
+ * Calls `callback` once after `interval` seconds, then removes the source.
+ */
+function timeout_add_seconds_once(interval: number, callback: () => void): number {
+  return GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, () => {
+    callback();
+    return GLib.SOURCE_REMOVE;
+  });
 }
 
 class MyApplet extends Applet.IconApplet {
@@ -96,9 +113,10 @@ class MyApplet extends Applet.IconApplet {
   connected_on_allocation_changed: number | undefined;
 
   // Timeout IDs
-  _hideTimeoutId: number | null;
-  _reshowingHideTimeoutId: number | null;
-  _updateIconsTimeoutId: number | null;
+  _hideTimeoutId: number | null = null;
+  _reshowingHideTimeoutId: number | null = null;
+  _updateIconsTimeoutId: number | null = null;
+  _updatePopupMenuTimeoutId: number | null = null;
 
   constructor(
     metadata: any,
@@ -107,6 +125,8 @@ class MyApplet extends Applet.IconApplet {
     instance_id: number,
   ) {
     super(orientation, panel_height, instance_id);
+
+    global.log("MyApplet constructor", Object.keys(GLib).join(", "));
 
     this.orientation = orientation;
     this.applet_path = metadata.path;
@@ -144,26 +164,22 @@ class MyApplet extends Applet.IconApplet {
       this.do_hide = true;
       this.alreadyHidden = [];
       if (!this.disable_starttime_autohide || this.do_autohide) {
-        // @ts-expect-error timeout_add_seconds Type is wrong
-        this._hideTimeoutId = Mainloop.timeout_add_seconds(
-          2,
-          Lang.bind(this, function (this: MyApplet) {
-            if (this.do_hide) this.auto_hide();
-          }),
-        );
+        this._hideTimeoutId = timeout_add_seconds_once(2, () => {
+          this._hideTimeoutId = null;
+          if (this.do_hide) this.auto_hide();
+        });
       }
 
-      Mainloop.timeout_add_seconds(
-        1,
-        Lang.bind(this, function (this: MyApplet) {
-          this.update_icons();
-          this.update_popup_menu();
-        }),
-      );
+      // Initial populate + start periodic updaters
+      timeout_add_seconds_once(1, () => {
+        this.update_icons();
+        this.update_popup_menu();
+        this.start_periodic_updaters();
+      });
 
       // TODO: evaluate whether we actually need "queue-relayout" for the more exotic features, like maybe not hiding an icon when it is being hovered. At least I think that's one of the things being done.
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
-        "allocation-changed",
+        "queue-relayout",
         () => {
           this.on_allocation_changed();
         },
@@ -175,7 +191,7 @@ class MyApplet extends Applet.IconApplet {
 
   auto_hide() {
     // another `auto_hide` is already scheduled
-    if (this._hideTimeoutId) {
+    if (this._hideTimeoutId || !this.do_autohide) {
       return;
     }
 
@@ -192,13 +208,10 @@ class MyApplet extends Applet.IconApplet {
       if (postpone) break;
     }
     if (postpone) {
-      // @ts-expect-error timeout_add_seconds Type is wrong
-      this._hideTimeoutId = Mainloop.timeout_add_seconds(
-        this.hide_time,
-        Lang.bind(this, function (this: MyApplet) {
-          this.auto_hide();
-        }),
-      );
+      this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
+        this._hideTimeoutId = null;
+        this.auto_hide();
+      });
     } else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode")) {
       this.toggle_hiding();
     }
@@ -215,9 +228,9 @@ class MyApplet extends Applet.IconApplet {
       Settings.BindingDirection.BIDIRECTIONAL,
       "do_autohide",
       "do_autohide",
-      Lang.bind(this, function (this: MyApplet) {
+      () => {
         if (this._hideTimeoutId && !this.do_autohide) {
-          Mainloop.source_remove(this._hideTimeoutId);
+          GLib.source_remove(this._hideTimeoutId);
           this._hideTimeoutId = null;
         } else if (this.do_autohide && this.do_hide) this.auto_hide();
 
@@ -226,68 +239,68 @@ class MyApplet extends Applet.IconApplet {
         }
 
         this.update_autohide_tooltip();
-      }),
+      },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "disablestarttimeautohide",
       "disable_starttime_autohide",
-      function () { },
+      function () {},
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hoveractivates",
       "hover_activates",
-      function () { },
+      function () {},
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hoveractivateshide",
       "hover_activates_hide",
-      function () { },
+      function () {},
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hidetime",
       "hide_time",
-      function () { },
+      function () {},
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hovertime",
       "hover_time",
-      function () { },
+      function () {},
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "autohiders",
       "autohideReshowing",
-      Lang.bind(this, function (this: MyApplet) {
+      () => {
         if (!this.do_hide) {
           this.toggle_hiding();
           this.auto_hide();
         }
-      }),
+      },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "autohiderstime",
       "autohideReshowingTime",
-      function (this: MyApplet) { },
+      () => {},
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hideuntilseparator",
       "hide_until_separator",
-      function (this: MyApplet) { },
+      () => {},
       null,
     );
   }
@@ -352,44 +365,28 @@ class MyApplet extends Applet.IconApplet {
   }
 
   on_allocation_changed() {
-    // global.log("allocation-changed");
+    global.log("allocation-changed");
     if (this.autohideReshowing && !this.do_hide) {
       if (this._reshowingHideTimeoutId) {
-        Mainloop.source_remove(this._reshowingHideTimeoutId);
+        GLib.source_remove(this._reshowingHideTimeoutId);
       }
 
-      // @ts-expect-error timeout_add_seconds Type is wrong
-      this._reshowingHideTimeoutId = Mainloop.timeout_add_seconds(
-        this.autohideReshowingTime,
-        Lang.bind(this, function (this: MyApplet) {
-          if (!this.do_hide) {
-            this.toggle_hiding();
-            this.auto_hide();
-          }
-          return false;
-        }),
-      );
+      this._reshowingHideTimeoutId = timeout_add_seconds_once(this.autohideReshowingTime, () => {
+        this._reshowingHideTimeoutId = null;
+        // We only really care when everything is hidden currently.
+        if (!this.do_hide) {
+          // Trigger hiding again, to hide reshown items again.
+          // TODO: Validate this works.
+          this.do_hide = true;
+          this.toggle_hiding();
+        }
+      });
     }
   }
 
   on_applet_clicked() {
     this.toggle_hiding();
     return true;
-  }
-
-  on_entered() {
-    if (
-      !this.actor.hover &&
-      this.hover_activates &&
-      !global.settings.get_boolean("panel-edit-mode")
-    )
-      Mainloop.timeout_add(
-        this.hover_time,
-        Lang.bind(this, function (this: MyApplet) {
-          if (this.actor.hover && (this.hover_activates_hide || !this.do_hide))
-            this.toggle_hiding();
-        }),
-      );
   }
 
   on_applet_removed_from_panel() {
@@ -409,14 +406,13 @@ class MyApplet extends Applet.IconApplet {
     }
 
     // Remove all timeouts
-    if (this._updateIconsTimeoutId) {
-      Mainloop.source_remove(this._updateIconsTimeoutId);
-    }
-    if (this._reshowingHideTimeoutId) {
-      Mainloop.source_remove(this._reshowingHideTimeoutId);
-    }
-    if (this._hideTimeoutId) {
-      Mainloop.source_remove(this._hideTimeoutId);
+    for (const id of [
+      this._updateIconsTimeoutId,
+      this._updatePopupMenuTimeoutId,
+      this._reshowingHideTimeoutId,
+      this._hideTimeoutId,
+    ]) {
+      if (id) GLib.source_remove(id);
     }
   }
 
@@ -427,6 +423,20 @@ class MyApplet extends Applet.IconApplet {
     }
     this.toggle_hiding();
     return true;
+  }
+
+  on_entered() {
+    if (
+      !this.actor.hover &&
+      this.hover_activates &&
+      !global.settings.get_boolean("panel-edit-mode")
+    ) {
+      timeout_add_once(this.hover_time, () => {
+        if (this.actor.hover && (this.hover_activates_hide || !this.do_hide)) {
+          this.toggle_hiding();
+        }
+      });
+    }
   }
 
   on_panel_edit_mode_changed() {
@@ -444,105 +454,116 @@ class MyApplet extends Applet.IconApplet {
     this.orientation = orientation;
   }
 
+  start_periodic_updaters() {
+    this._updateIconsTimeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
+      this.update_icons();
+      return GLib.SOURCE_CONTINUE;
+    });
+
+    this._updatePopupMenuTimeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
+      this.update_popup_menu();
+      return GLib.SOURCE_CONTINUE;
+    });
+  }
+
   toggle_hiding() {
-    if (this._hideTimeoutId) {
-      Mainloop.source_remove(this._hideTimeoutId);
-      this._hideTimeoutId = null;
-    }
+    try {
+      if (this._hideTimeoutId) {
+        GLib.source_remove(this._hideTimeoutId);
+        this._hideTimeoutId = null;
+      }
 
-    this.update_our_icon();
+      this.update_our_icon();
 
-    for (const child of this.get_eligible_children()) {
-      const applet = child._applet;
+      for (const child of this.get_eligible_children()) {
+        const applet = child._applet;
 
-      if (this.do_hide) {
-        this.alreadyHidden = [];
+        if (this.do_hide) {
+          this.alreadyHidden = [];
 
-        // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
-        if (!child.visible) {
-          this.alreadyHidden.push(child);
-        }
-
-        if (applet._uuid == "systray@cinnamon.org") {
-          for (const j of child.get_first_child().get_children()) {
-            const icon = j.get_child();
-            const key = applet._uuid + icon.title
-            if (this.icons[key] && this.icons[key].show) {
-              continue;
-            }
-
-            j.hide();
+          // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
+          if (!child.visible) {
+            this.alreadyHidden.push(child);
           }
-          continue;
-        } else if (
-          this.hide_until_separator &&
-          applet._uuid == "separator@cinnamon.org"
-        ) {
-          break;
-        }
 
-        if (applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = applet.statusIcons as Record<string, any>;
-          for (const icon of Object.values(icons)) {
-            const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
-            const key = applet._uuid + name + icon_name;
-            if (this.icons[key] && this.icons[key].show) {
-              continue;
-            }
-
-            icon.actor.hide();
-          }
-        }
-
-        const { uuid, name, icon } = applet._meta;
-        const key = uuid + name + icon;
-        if (this.icons[key] && this.icons[key].show) {
-          continue;
-        }
-
-        child.hide();
-      } else {
-        // No need to check for what should be shown, since we just show everything here.
-        if (this.alreadyHidden.indexOf(child) < 0) {
-          child.show();
-        }
-
-        if (applet._uuid == "systray@cinnamon.org") {
-          try {
+          if (applet._uuid == "systray@cinnamon.org") {
             for (const j of child.get_first_child().get_children()) {
-              j.show();
-            }
-          } catch (e) {
-            global.logError(e);
-          }
-        }
+              const icon = j.get_child();
+              const key = applet._uuid + icon.title;
+              if (this.icons[key] && this.icons[key].show) {
+                continue;
+              }
 
-        if (applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = applet.statusIcons as Record<string, any>;
-          for (const icon of Object.values(icons)) {
-            const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
-            if (name.trim() !== "" && icon_name.trim() !== "") {
-              icon.actor.show();
+              j.hide();
+            }
+            continue;
+          } else if (this.hide_until_separator && applet._uuid == "separator@cinnamon.org") {
+            break;
+          }
+
+          if (applet._uuid === "xapp-status@cinnamon.org") {
+            const icons = applet.statusIcons as Record<string, any>;
+            for (const icon of Object.values(icons)) {
+              const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
+              const key = applet._uuid + name + icon_name;
+              if (this.icons[key] && this.icons[key].show) {
+                continue;
+              }
+
+              icon.actor.hide();
+            }
+            continue;
+          }
+
+          const { uuid, name, icon } = applet._meta;
+          const key = uuid + name + icon;
+          if (this.icons[key] && this.icons[key].show) {
+            continue;
+          }
+
+          child.hide();
+        } else {
+          // No need to check for what should be shown, since we just show everything here.
+          if (this.alreadyHidden.indexOf(child) < 0) {
+            child.show();
+          }
+
+          if (applet._uuid == "systray@cinnamon.org") {
+            try {
+              for (const j of child.get_first_child().get_children()) {
+                j.show();
+              }
+            } catch (e) {
+              global.logError(e);
+            }
+          }
+
+          if (applet._uuid === "xapp-status@cinnamon.org") {
+            const icons = applet.statusIcons as Record<string, any>;
+            for (const icon of Object.values(icons)) {
+              const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
+              if (name.trim() !== "" && icon_name.trim() !== "") {
+                icon.actor.show();
+              }
             }
           }
         }
       }
-    }
 
-    if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
-      // @ts-expect-error timeout_add_seconds Type is wrong
-      this._hideTimeoutId = Mainloop.timeout_add_seconds(
-        this.hide_time,
-        Lang.bind(this, function (this: MyApplet) {
+      global.log("asdf" + this.alreadyHidden.length);
+
+      if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
+        this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
+          this._hideTimeoutId = null;
           this.auto_hide();
-        }),
-      );
+        });
+      }
+
+      global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
+      this.do_hide = !this.do_hide;
+    } catch (e) {
+      global.logError(e);
     }
-
-    this.update_autohide_tooltip();
-
-    global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
-    this.do_hide = !this.do_hide;
   }
 
   update_autohide_tooltip() {
@@ -582,7 +603,7 @@ class MyApplet extends Applet.IconApplet {
         });
       } else if (applet._uuid === "systray@cinnamon.org") {
         // It's typeof St.Bin[], the buttons created here: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/files/usr/share/cinnamon/applets/systray%40cinnamon.org/applet.js#L147
-        for (const systrayIcon of (childBoxLayout.get_first_child().get_children() as any)) {
+        for (const systrayIcon of childBoxLayout.get_first_child().get_children() as any) {
           // CinnamonTrayIcon: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/src/cinnamon-tray-icon.c#L20
           const icon = systrayIcon.get_child();
           const key = applet._uuid + icon.title;
@@ -616,36 +637,26 @@ class MyApplet extends Applet.IconApplet {
         delete this.icons[key];
       }
     });
-
-    // @ts-expect-error timeout_add_seconds Type is wrong
-    this._updateIconsTimeoutId = Mainloop.timeout_add_seconds(
-      30,
-      Lang.bind(this, function (this: MyApplet) {
-        this.update_icons();
-      }),
-    );
   }
 
   update_our_icon() {
     if (this.do_hide) {
       if (this.is_vertical()) {
         this.set_applet_icon_symbolic_name("2v");
-      }
-      else {
+      } else {
         this.set_applet_icon_symbolic_name("2");
       }
-    }
-    else {
+    } else {
       if (this.is_vertical()) {
         this.set_applet_icon_symbolic_name("1v");
-      }
-      else {
+      } else {
         this.set_applet_icon_symbolic_name("1");
       }
     }
   }
 
   update_popup_menu() {
+    global.log("update_popup_menu");
     if (!this._applet_context_menu.isOpen) {
       if (!this.menu_items_icon_section) {
         this.menu_items_icon_section = new PopupMenu.PopupMenuSection();
@@ -667,12 +678,10 @@ class MyApplet extends Applet.IconApplet {
           _("Autohide"),
           this.do_autohide,
         );
-        this.menu_item_auto_hide.connect(
-          "toggled",
-          Lang.bind(this, function (this: MyApplet) {
-            this.do_autohide = !this.do_autohide;
-          }),
-        );
+        this.menu_item_auto_hide.connect("toggled", () => {
+          this.do_autohide = !this.do_autohide;
+          this.update_autohide_tooltip();
+        });
         this._applet_context_menu.addMenuItem(this.menu_item_auto_hide, 0);
       }
 
@@ -683,29 +692,19 @@ class MyApplet extends Applet.IconApplet {
         // global.log("resolved_icon_name: " + resolved_icon_name);
         const iconToggle = resolved_icon_name
           ? new PopupMenu.PopupSwitchIconMenuItem(
-            name,
-            show,
-            resolved_icon_name,
-            icon_name!.includes("/") ? St.IconType.FULLCOLOR : St.IconType.SYMBOLIC,
-          )
+              name,
+              show,
+              resolved_icon_name,
+              icon_name!.includes("/") ? St.IconType.FULLCOLOR : St.IconType.SYMBOLIC,
+            )
           : new PopupMenu.PopupSwitchMenuItem(name, show);
         // @ts-expect-error
-        iconToggle.connect(
-          "toggled",
-          Lang.bind(this, function (this: MyApplet) {
-            this.icons[key].show = !this.icons[key].show;
-          }),
-        );
+        iconToggle.connect("toggled", () => {
+          this.icons[key].show = !this.icons[key].show;
+        });
         this.menu_items_icon_section!.addMenuItem(iconToggle);
       });
     }
-
-    Mainloop.timeout_add_seconds(
-      30,
-      Lang.bind(this, function (this: MyApplet) {
-        this.update_popup_menu();
-      }),
-    );
   }
 }
 

@@ -2,7 +2,7 @@
   "compilerOptions": {
     // Cinnamon TypeScript declarations
     "types": ["@ci-types/cjs"],
-    
+
     "strict": true,
     "noImplicitThis": true,
     "noImplicitAny": true,

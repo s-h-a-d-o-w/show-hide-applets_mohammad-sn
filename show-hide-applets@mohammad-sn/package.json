@@ -2,13 +2,14 @@
   "name": "show-hide-applets@mohammad-sn",
   "version": "1.0.0",
   "description": "",
-  "scripts": {
-    "build": "esbuild --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
-    "dev": "esbuild --watch --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs"
-  },
   "keywords": [],
   "author": "",
   "type": "module",
+  "scripts": {
+    "build": "esbuild --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
+    "dev": "esbuild --watch --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
+    "format": "oxfmt"
+  },
   "devDependencies": {
     "@ci-types/cjs": "^6.0.2-5",
     "@types/node": "^24.13.2",
