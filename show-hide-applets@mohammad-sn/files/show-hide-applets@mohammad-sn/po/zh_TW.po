@@ -33,7 +33,7 @@ msgstr "面板編輯模式"
 msgid "Add applets to the panel"
 msgstr "將小程式新增至面板"
 
-#. settings-schema.json->autohide->description
+#. settings-schema.json->do_autohide->description
 #. applet.js:96
 msgid "Autohide"
 msgstr "自動隱藏"
@@ -52,7 +52,7 @@ msgstr "Drawer（顯示/隱藏小程式）"
 msgid "Settings for show-hide-applets@mohammad-sn"
 msgstr "show-hide-applets@mohammad-sn 設定"
 
-#. settings-schema.json->autohide->tooltip
+#. settings-schema.json->do_autohide->tooltip
 msgid ""
 "Check it if you want to hide applets automatically, unless you should click "
 "on applet to do so.\n"

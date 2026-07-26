@@ -37,7 +37,7 @@ msgstr "Panelredigeringsläge"
 msgid "Add applets to the panel"
 msgstr "Lägg till panelprogram"
 
-#. settings-schema.json->autohide->description
+#. settings-schema.json->do_autohide->description
 #. applet.js:96
 msgid "Autohide"
 msgstr "Dölj automatiskt"
@@ -58,7 +58,7 @@ msgstr "Drawer (visa/dölj panelprogram)"
 msgid "Settings for show-hide-applets@mohammad-sn"
 msgstr "Inställningar för show-hide-applets@mohammad-sn"
 
-#. settings-schema.json->autohide->tooltip
+#. settings-schema.json->do_autohide->tooltip
 #, fuzzy
 msgid ""
 "Check it if you want to hide applets automatically, unless you should click "

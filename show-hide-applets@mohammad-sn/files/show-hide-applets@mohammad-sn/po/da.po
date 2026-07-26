@@ -35,7 +35,7 @@ msgstr "Panelredigeringstilstand"
 msgid "Add applets to the panel"
 msgstr "Tilføj panelprogrammer til panelet"
 
-#. settings-schema.json->autohide->description
+#. settings-schema.json->do_autohide->description
 #. applet.js:96
 msgid "Autohide"
 msgstr "Skjul automatisk"
@@ -56,7 +56,7 @@ msgstr "Skuffe (vis/skjul panelprogrammer)"
 msgid "Settings for show-hide-applets@mohammad-sn"
 msgstr "Indstillinger"
 
-#. settings-schema.json->autohide->tooltip
+#. settings-schema.json->do_autohide->tooltip
 msgid ""
 "Check it if you want to hide applets automatically, unless you should click "
 "on applet to do so.\n"

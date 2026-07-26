@@ -37,7 +37,7 @@ msgstr "Leistenbearbeitungsmodus"
 msgid "Add applets to the panel"
 msgstr "Applets zur Leiste hinzufügen"
 
-#. settings-schema.json->autohide->description
+#. settings-schema.json->do_autohide->description
 #. applet.js:96
 msgid "Autohide"
 msgstr "Verstecke automatisch"
@@ -59,7 +59,7 @@ msgstr "Schublade (zeige/verstecke Applets)"
 msgid "Settings for show-hide-applets@mohammad-sn"
 msgstr "Einstellungen"
 
-#. settings-schema.json->autohide->tooltip
+#. settings-schema.json->do_autohide->tooltip
 #, fuzzy
 msgid ""
 "Check it if you want to hide applets automatically, unless you should click "

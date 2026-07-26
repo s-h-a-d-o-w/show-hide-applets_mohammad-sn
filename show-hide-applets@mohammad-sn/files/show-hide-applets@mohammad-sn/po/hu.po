@@ -34,7 +34,7 @@ msgstr "Panelszerkesztő üzemmód"
 msgid "Add applets to the panel"
 msgstr "Kisalkalmazás hozzáadása a panelhez"
 
-#. settings-schema.json->autohide->description
+#. settings-schema.json->do_autohide->description
 #. applet.js:96
 msgid "Autohide"
 msgstr "Automatikus elrejtés"
@@ -55,7 +55,7 @@ msgstr "Fiók (kisalkalmazások megjelenítése / elrejtése)"
 msgid "Settings for show-hide-applets@mohammad-sn"
 msgstr "Show-hide-applets@mohammad-sn beállításai"
 
-#. settings-schema.json->autohide->tooltip
+#. settings-schema.json->do_autohide->tooltip
 msgid ""
 "Check it if you want to hide applets automatically, unless you should click "
 "on applet to do so.\n"

@@ -32,7 +32,7 @@ msgstr "Paneel Bewerk Modus"
 msgid "Add applets to the panel"
 msgstr "Applets toevoegen aan het paneel"
 
-#. settings-schema.json->autohide->description
+#. settings-schema.json->do_autohide->description
 #. applet.js:96
 msgid "Autohide"
 msgstr "Automatisch verbergen"
@@ -53,7 +53,7 @@ msgstr "Drawer (toon/verberg applets)"
 msgid "Settings for show-hide-applets@mohammad-sn"
 msgstr "Instellingen voor show-hide-applets@mohammad-sn"
 
-#. settings-schema.json->autohide->tooltip
+#. settings-schema.json->do_autohide->tooltip
 msgid ""
 "Check it if you want to hide applets automatically, unless you should click "
 "on applet to do so.\n"
