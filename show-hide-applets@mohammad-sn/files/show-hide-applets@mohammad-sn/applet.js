@@ -67,6 +67,8 @@ var MyApplet = class extends Applet.IconApplet {
   // Runtime state
   do_hide;
   alreadyHidden;
+  last_toggle_hiding_end;
+  last_toggle_hiding_start;
   loadedPanel;
   monitor;
   signal_manager;
@@ -94,6 +96,8 @@ var MyApplet = class extends Applet.IconApplet {
     this._hideTimeoutId = null;
     this._reshowingHideTimeoutId = null;
     this._updateIconsTimeoutId = null;
+    this.last_toggle_hiding_start = 0;
+    this.last_toggle_hiding_end = 0;
     try {
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
@@ -129,7 +133,7 @@ var MyApplet = class extends Applet.IconApplet {
         this.start_periodic_updaters();
       });
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
-        "queue-relayout",
+        "allocation-changed",
         () => {
           this.on_allocation_changed();
         }
@@ -301,7 +305,13 @@ var MyApplet = class extends Applet.IconApplet {
     return this.orientation == St.Side.LEFT || this.orientation == St.Side.RIGHT;
   }
   on_allocation_changed() {
-    global.log("allocation-changed");
+    const now = GLib.get_monotonic_time();
+    if (
+      // 50ms
+      now - this.last_toggle_hiding_end < 5e4 || now - this.last_toggle_hiding_start < 5e4
+    ) {
+      return;
+    }
     if (this.autohideReshowing && !this.do_hide) {
       if (this._reshowingHideTimeoutId) {
         GLib.source_remove(this._reshowingHideTimeoutId);
@@ -310,7 +320,7 @@ var MyApplet = class extends Applet.IconApplet {
         this._reshowingHideTimeoutId = null;
         if (!this.do_hide) {
           this.do_hide = true;
-          this.toggle_hiding();
+          this.toggle_hiding(true);
         }
       });
     }
@@ -381,18 +391,21 @@ var MyApplet = class extends Applet.IconApplet {
       return GLib.SOURCE_CONTINUE;
     });
   }
-  toggle_hiding() {
+  toggle_hiding(refreshing = false) {
     try {
       if (this._hideTimeoutId) {
         GLib.source_remove(this._hideTimeoutId);
         this._hideTimeoutId = null;
       }
+      this.last_toggle_hiding_start = GLib.get_monotonic_time();
       this.update_our_icon();
+      if (this.do_hide && !refreshing) {
+        this.alreadyHidden = [];
+      }
       for (const child of this.get_eligible_children()) {
         const applet = child._applet;
         if (this.do_hide) {
-          this.alreadyHidden = [];
-          if (!child.visible) {
+          if (!child.visible && !refreshing) {
             this.alreadyHidden.push(child);
           }
           if (applet._uuid == "systray@cinnamon.org") {
@@ -421,6 +434,10 @@ var MyApplet = class extends Applet.IconApplet {
             continue;
           }
           const { uuid, name, icon } = applet._meta;
+          global.log("uuid: " + uuid + ", name: " + name + ", icon: " + icon);
+          if (name === "Spices Update") {
+            global.log(`Spices Update ${child.visible} ${child._applet.actor.visible}`);
+          }
           const key = uuid + name + icon;
           if (this.icons[key] && this.icons[key].show) {
             continue;
@@ -450,7 +467,6 @@ var MyApplet = class extends Applet.IconApplet {
           }
         }
       }
-      global.log("asdf" + this.alreadyHidden.length);
       if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
         this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
           this._hideTimeoutId = null;
@@ -459,6 +475,7 @@ var MyApplet = class extends Applet.IconApplet {
       }
       global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
       this.do_hide = !this.do_hide;
+      this.last_toggle_hiding_end = GLib.get_monotonic_time();
     } catch (e) {
       global.logError(e);
     }

@@ -28,22 +28,22 @@ declare global {
   }
 }
 
-// function listAllProps(obj: any): string[] {
-//   const seen = new Set();
-//   const out = [];
+function listAllProps(obj: any): string[] {
+  const seen = new Set();
+  const out = [];
 
-//   while (obj && obj !== Object.prototype) {
-//     for (const name of Object.getOwnPropertyNames(obj)) {
-//       if (!seen.has(name)) {
-//         seen.add(name);
-//         out.push(name);
-//       }
-//     }
-//     obj = Object.getPrototypeOf(obj);
-//   }
+  while (obj && obj !== Object.prototype) {
+    for (const name of Object.getOwnPropertyNames(obj)) {
+      if (!seen.has(name)) {
+        seen.add(name);
+        out.push(name);
+      }
+    }
+    obj = Object.getPrototypeOf(obj);
+  }
 
-//   return out;
-// }
+  return out;
+}
 
 /**
  * Polyfill for GLib.timeout_add_once (not in Cinnamon 6.6.9's GLib version).
@@ -86,6 +86,8 @@ class MyApplet extends Applet.IconApplet {
   // Runtime state
   do_hide!: boolean;
   alreadyHidden!: imports.gi.Clutter.Actor[];
+  last_toggle_hiding_end!: number;
+  last_toggle_hiding_start!: number;
   loadedPanel!: imports.ui.panel.Panel;
   monitor!: imports.gi.XApp.StatusIconMonitor;
   signal_manager!: imports.misc.signalManager.SignalManager;
@@ -134,7 +136,8 @@ class MyApplet extends Applet.IconApplet {
     this._hideTimeoutId = null;
     this._reshowingHideTimeoutId = null;
     this._updateIconsTimeoutId = null;
-
+    this.last_toggle_hiding_start = 0;
+    this.last_toggle_hiding_end = 0;
     try {
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
@@ -179,7 +182,7 @@ class MyApplet extends Applet.IconApplet {
 
       // TODO: evaluate whether we actually need "queue-relayout" for the more exotic features, like maybe not hiding an icon when it is being hovered. At least I think that's one of the things being done.
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
-        "queue-relayout",
+        "allocation-changed",
         () => {
           this.on_allocation_changed();
         },
@@ -365,7 +368,17 @@ class MyApplet extends Applet.IconApplet {
   }
 
   on_allocation_changed() {
-    global.log("allocation-changed");
+    // Event was probably triggered by us.
+    // While this currently wouldn't result in an infinite loop, it's probably a good idea to ignore events that are triggered by us changing the panel content.
+    const now = GLib.get_monotonic_time();
+    if (
+      // 50ms
+      now - this.last_toggle_hiding_end < 50_000 ||
+      now - this.last_toggle_hiding_start < 50_000
+    ) {
+      return;
+    }
+
     if (this.autohideReshowing && !this.do_hide) {
       if (this._reshowingHideTimeoutId) {
         GLib.source_remove(this._reshowingHideTimeoutId);
@@ -378,7 +391,7 @@ class MyApplet extends Applet.IconApplet {
           // Trigger hiding again, to hide reshown items again.
           // TODO: Validate this works.
           this.do_hide = true;
-          this.toggle_hiding();
+          this.toggle_hiding(true);
         }
       });
     }
@@ -466,23 +479,27 @@ class MyApplet extends Applet.IconApplet {
     });
   }
 
-  toggle_hiding() {
+  toggle_hiding(refreshing: boolean = false) {
     try {
       if (this._hideTimeoutId) {
         GLib.source_remove(this._hideTimeoutId);
         this._hideTimeoutId = null;
       }
 
+      this.last_toggle_hiding_start = GLib.get_monotonic_time();
       this.update_our_icon();
+
+      if (this.do_hide && !refreshing) {
+        this.alreadyHidden = [];
+      }
 
       for (const child of this.get_eligible_children()) {
         const applet = child._applet;
 
         if (this.do_hide) {
-          this.alreadyHidden = [];
-
           // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
-          if (!child.visible) {
+          if (!child.visible && !refreshing) {
+            // global.log("Adding to alreadyHidden: " + applet._uuid);
             this.alreadyHidden.push(child);
           }
 
@@ -516,6 +533,10 @@ class MyApplet extends Applet.IconApplet {
           }
 
           const { uuid, name, icon } = applet._meta;
+          global.log("uuid: " + uuid + ", name: " + name + ", icon: " + icon);
+          if (name === "Spices Update") {
+            global.log(`Spices Update ${child.visible} ${child._applet.actor.visible}`);
+          }
           const key = uuid + name + icon;
           if (this.icons[key] && this.icons[key].show) {
             continue;
@@ -550,8 +571,6 @@ class MyApplet extends Applet.IconApplet {
         }
       }
 
-      global.log("asdf" + this.alreadyHidden.length);
-
       if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
         this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
           this._hideTimeoutId = null;
@@ -561,6 +580,7 @@ class MyApplet extends Applet.IconApplet {
 
       global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
       this.do_hide = !this.do_hide;
+      this.last_toggle_hiding_end = GLib.get_monotonic_time();
     } catch (e) {
       global.logError(e);
     }
