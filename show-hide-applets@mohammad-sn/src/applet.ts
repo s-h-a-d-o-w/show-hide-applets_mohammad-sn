@@ -128,16 +128,14 @@ class MyApplet extends Applet.IconApplet {
   ) {
     super(orientation, panel_height, instance_id);
 
-    global.log("MyApplet constructor", Object.keys(GLib).join(", "));
-
     this.orientation = orientation;
     this.applet_path = metadata.path;
-    global.log("applet_path: " + this.applet_path);
     this._hideTimeoutId = null;
     this._reshowingHideTimeoutId = null;
     this._updateIconsTimeoutId = null;
     this.last_toggle_hiding_start = 0;
     this.last_toggle_hiding_end = 0;
+
     try {
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
@@ -389,7 +387,6 @@ class MyApplet extends Applet.IconApplet {
         // We only really care when everything is hidden currently.
         if (!this.do_hide) {
           // Trigger hiding again, to hide reshown items again.
-          // TODO: Validate this works.
           this.do_hide = true;
           this.toggle_hiding(true);
         }
@@ -533,10 +530,6 @@ class MyApplet extends Applet.IconApplet {
           }
 
           const { uuid, name, icon } = applet._meta;
-          global.log("uuid: " + uuid + ", name: " + name + ", icon: " + icon);
-          if (name === "Spices Update") {
-            global.log(`Spices Update ${child.visible} ${child._applet.actor.visible}`);
-          }
           const key = uuid + name + icon;
           if (this.icons[key] && this.icons[key].show) {
             continue;

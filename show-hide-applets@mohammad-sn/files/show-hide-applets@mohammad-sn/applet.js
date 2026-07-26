@@ -89,10 +89,8 @@ var MyApplet = class extends Applet.IconApplet {
   _updatePopupMenuTimeoutId = null;
   constructor(metadata, orientation, panel_height, instance_id) {
     super(orientation, panel_height, instance_id);
-    global.log("MyApplet constructor", Object.keys(GLib).join(", "));
     this.orientation = orientation;
     this.applet_path = metadata.path;
-    global.log("applet_path: " + this.applet_path);
     this._hideTimeoutId = null;
     this._reshowingHideTimeoutId = null;
     this._updateIconsTimeoutId = null;
@@ -434,10 +432,6 @@ var MyApplet = class extends Applet.IconApplet {
             continue;
           }
           const { uuid, name, icon } = applet._meta;
-          global.log("uuid: " + uuid + ", name: " + name + ", icon: " + icon);
-          if (name === "Spices Update") {
-            global.log(`Spices Update ${child.visible} ${child._applet.actor.visible}`);
-          }
           const key = uuid + name + icon;
           if (this.icons[key] && this.icons[key].show) {
             continue;

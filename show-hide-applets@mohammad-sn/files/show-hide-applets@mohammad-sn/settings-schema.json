@@ -49,7 +49,7 @@
   },
   "autohiders": {
     "type": "checkbox",
-    "default": true,
+    "default": false,
     "description": "Autohide reshowing applets",
     "tooltip": ""
   },
