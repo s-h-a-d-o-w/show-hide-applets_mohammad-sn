@@ -256,19 +256,19 @@ var MyApplet = class extends Applet.IconApplet {
     );
   }
   get_eligible_children() {
-    let applets = this.get_zone_children();
-    let ourIndex = applets.indexOf(this.actor);
+    let children = this.get_zone_children();
+    let ourIndex = children.indexOf(this.actor);
     let eligible = [];
     if (this.do_hide) {
-      for (let i = 0; i < ourIndex; i++) {
-        eligible.push(applets[i]);
-      }
-    } else {
       for (let i = ourIndex - 1; i > -1; i--) {
-        if (this.hide_until_separator && applets[i]._applet._uuid == "separator@cinnamon.org") {
+        if (this.hide_until_separator && children[i]._applet._uuid == "separator@cinnamon.org") {
           break;
         }
-        eligible.push(applets[i]);
+        eligible.push(children[i]);
+      }
+    } else {
+      for (let i = 0; i < ourIndex; i++) {
+        eligible.push(children[i]);
       }
     }
     return eligible;
@@ -356,56 +356,53 @@ var MyApplet = class extends Applet.IconApplet {
       this._hideTimeoutId = null;
     }
     this.update_our_icon();
-    let applets = this.get_zone_children();
-    let ourIndex = applets.indexOf(this.actor);
+    let children = this.get_eligible_children();
     if (this.do_hide) {
       this.alreadyHidden = [];
-      for (let i = ourIndex - 1; i > -1; i--) {
-        if (!applets[i].visible) this.alreadyHidden.push(applets[i]);
-        if (applets[i]._applet._uuid == "systray@cinnamon.org") {
-          const tray = applets[i];
-          for (const j of tray.get_first_child().get_children()) {
+      for (const child of children) {
+        if (!child.visible) this.alreadyHidden.push(child);
+        if (child._applet._uuid == "systray@cinnamon.org") {
+          for (const j of child.get_first_child().get_children()) {
             j.hide();
           }
           continue;
-        } else if (this.hide_until_separator && applets[i]._applet._uuid == "separator@cinnamon.org") {
+        } else if (this.hide_until_separator && child._applet._uuid == "separator@cinnamon.org") {
           break;
         }
-        if (applets[i]._applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = applets[i]._applet.statusIcons;
+        if (child._applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = child._applet.statusIcons;
           for (const icon2 of Object.values(icons)) {
             const { name: name2, icon_name } = icon2.proxy;
-            const key2 = applets[i]._applet._uuid + name2 + icon_name;
+            const key2 = child._applet._uuid + name2 + icon_name;
             if (this.icons[key2] && this.icons[key2].show) {
               continue;
             }
             icon2.actor.hide();
           }
         }
-        const { uuid, name, icon } = applets[i]._applet._meta;
+        const { uuid, name, icon } = child._applet._meta;
         const key = uuid + name + icon;
         if (this.icons[key] && this.icons[key].show) {
           continue;
         }
-        applets[i].hide();
+        child.hide();
       }
     } else {
-      for (let i = 0; i < ourIndex; i++) {
-        if (this.alreadyHidden.indexOf(applets[i]) < 0) {
-          applets[i].show();
+      for (const child of children) {
+        if (this.alreadyHidden.indexOf(child) < 0) {
+          child.show();
         }
-        if (applets[i]._applet._uuid == "systray@cinnamon.org") {
-          const tray = applets[i];
+        if (child._applet._uuid == "systray@cinnamon.org") {
           try {
-            for (const j of tray.get_first_child().get_children()) {
+            for (const j of child.get_first_child().get_children()) {
               j.show();
             }
           } catch (e) {
             global.logError(e);
           }
         }
-        if (applets[i]._applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = applets[i]._applet.statusIcons;
+        if (child._applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = child._applet.statusIcons;
           for (const icon of Object.values(icons)) {
             const { name, icon_name } = icon.proxy;
             if (name.trim() !== "" && icon_name.trim() !== "") {
