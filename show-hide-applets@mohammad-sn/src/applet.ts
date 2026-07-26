@@ -136,7 +136,7 @@ class MyApplet extends Applet.IconApplet {
         this._hideTimeoutId = Mainloop.timeout_add_seconds(
           2,
           Lang.bind(this, function (this: MyApplet) {
-            if (this.do_hide) this.auto_hide(true);
+            if (this.do_hide) this.auto_hide();
           }),
         );
       }
@@ -166,7 +166,7 @@ class MyApplet extends Applet.IconApplet {
     }
   }
 
-  auto_hide(update_already_hidden: boolean) {
+  auto_hide() {
     // another `auto_hide` is already scheduled
     if (this._hideTimeoutId) {
       return;
@@ -189,11 +189,11 @@ class MyApplet extends Applet.IconApplet {
       this._hideTimeoutId = Mainloop.timeout_add_seconds(
         this.hide_time,
         Lang.bind(this, function (this: MyApplet) {
-          this.auto_hide(update_already_hidden);
+          this.auto_hide();
         }),
       );
     } else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode")) {
-      this.toggle_hiding(update_already_hidden);
+      this.toggle_hiding();
     }
   }
 
@@ -212,7 +212,7 @@ class MyApplet extends Applet.IconApplet {
         if (this._hideTimeoutId && !this.do_autohide) {
           Mainloop.source_remove(this._hideTimeoutId);
           this._hideTimeoutId = null;
-        } else if (this.do_autohide && this.do_hide) this.auto_hide(true);
+        } else if (this.do_autohide && this.do_hide) this.auto_hide();
 
         if (this.menu_item_auto_hide) {
           this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
@@ -275,8 +275,8 @@ class MyApplet extends Applet.IconApplet {
       "autohideReshowing",
       Lang.bind(this, function (this: MyApplet) {
         if (!this.do_hide) {
-          this.toggle_hiding(true);
-          this.auto_hide(true);
+          this.toggle_hiding();
+          this.auto_hide();
         }
       }),
       null,
@@ -343,8 +343,8 @@ class MyApplet extends Applet.IconApplet {
         this.autohideReshowingTime,
         Lang.bind(this, function (this: MyApplet) {
           if (!this.do_hide) {
-            this.toggle_hiding(true);
-            this.auto_hide(true);
+            this.toggle_hiding();
+            this.auto_hide();
           }
           return false;
         }),
@@ -353,7 +353,7 @@ class MyApplet extends Applet.IconApplet {
   }
 
   on_applet_clicked() {
-    this.toggle_hiding(true);
+    this.toggle_hiding();
     return true;
   }
 
@@ -367,7 +367,7 @@ class MyApplet extends Applet.IconApplet {
         this.hover_time,
         Lang.bind(this, function (this: MyApplet) {
           if (this.actor.hover && (this.hover_activates_hide || !this.do_hide))
-            this.toggle_hiding(true);
+            this.toggle_hiding();
         }),
       );
   }
@@ -375,7 +375,7 @@ class MyApplet extends Applet.IconApplet {
   on_applet_removed_from_panel() {
     global.log("on_applet_removed_from_panel");
     if (!this.do_hide) {
-      this.toggle_hiding(true);
+      this.toggle_hiding();
     }
 
     if (this.connected_on_panel_edit_mode_changed) {
@@ -396,7 +396,7 @@ class MyApplet extends Applet.IconApplet {
     if (this.menu_item_auto_hide) {
       this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
     }
-    this.toggle_hiding(this.do_autohide);
+    this.toggle_hiding();
     return true;
   }
 
@@ -404,10 +404,10 @@ class MyApplet extends Applet.IconApplet {
     this.menu_item_panel_edit_mode.setToggleState(global.settings.get_boolean("panel-edit-mode"));
     if (global.settings.get_boolean("panel-edit-mode")) {
       if (!this.do_hide) {
-        this.toggle_hiding(true);
+        this.toggle_hiding();
       }
     } else if (this.do_hide) {
-      this.toggle_hiding(true);
+      this.toggle_hiding();
     }
   }
 
@@ -415,7 +415,7 @@ class MyApplet extends Applet.IconApplet {
     this.orientation = orientation;
   }
 
-  toggle_hiding(update_already_hidden: boolean) {
+  toggle_hiding() {
     if (this._hideTimeoutId) {
       Mainloop.source_remove(this._hideTimeoutId);
       this._hideTimeoutId = null;
@@ -424,13 +424,13 @@ class MyApplet extends Applet.IconApplet {
     let applets = this.get_zone_children();
     let ourIndex = applets.indexOf(this.actor);
     if (this.do_hide) {
-      if (update_already_hidden) this.alreadyHidden = [];
+      this.alreadyHidden = [];
       if (this.is_vertical()) this.set_applet_icon_symbolic_name("2v");
       else this.set_applet_icon_symbolic_name("2");
       for (let i = ourIndex - 1; i > -1; i--) {
         // global.log("Hiding " + applets[i]._applet._uuid);
         // Keep track of icons that were already hidden, not by us.
-        if (!applets[i].visible && update_already_hidden) this.alreadyHidden.push(applets[i]);
+        if (!applets[i].visible) this.alreadyHidden.push(applets[i]);
         if (applets[i]._applet._uuid == "systray@cinnamon.org") {
           const tray = applets[i];
           for (const j of tray.get_first_child().get_children()) {
@@ -511,7 +511,7 @@ class MyApplet extends Applet.IconApplet {
         this._hideTimeoutId = Mainloop.timeout_add_seconds(
           this.hide_time,
           Lang.bind(this, function (this: MyApplet) {
-            this.auto_hide(update_already_hidden);
+            this.auto_hide();
           }),
         );
     }
