@@ -26,6 +26,8 @@ module.exports = __toCommonJS(applet_exports);
 var Applet = imports.ui.applet;
 var Lang = imports.lang;
 var Gtk = imports.gi.Gtk;
+var Pixbuf = imports.gi.GdkPixbuf.Pixbuf;
+var Gdk = imports.gi.Gdk;
 var Settings = imports.ui.settings;
 var PopupMenu = imports.ui.popupMenu;
 var St = imports.gi.St;
@@ -259,15 +261,20 @@ var MyApplet = class extends Applet.IconApplet {
     if (!icon_name.includes("/")) {
       return icon_name;
     }
-    const dest_name = icon_name.replace(/\//g, "@");
+    const is_ico = icon_name.endsWith(".ico");
+    const dest_name = is_ico ? icon_name.replace(/\//g, "@").replace(/\.ico$/, ".png") : icon_name.replace(/\//g, "@");
     const dest_file = this.icons_dir.get_child(dest_name);
     if (!dest_file.query_exists(null)) {
       const source_file = Gio.File.new_for_path(icon_name);
       if (!source_file.query_exists(null)) {
         return void 0;
       }
-      global.log("copied to " + dest_file.get_path());
-      source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+      if (is_ico) {
+        const pixbuf = Pixbuf.new_from_file(icon_name);
+        pixbuf.savev(dest_file.get_path().replace(/\.ico$/, ".png"), "png", null, null);
+      } else {
+        source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+      }
     }
     return dest_name.replace(/\.[^.]+$/, "");
   }

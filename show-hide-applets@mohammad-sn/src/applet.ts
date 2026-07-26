@@ -1,6 +1,8 @@
 const Applet = imports.ui.applet;
 const Lang = imports.lang;
 const Gtk = imports.gi.Gtk;
+const Pixbuf = imports.gi.GdkPixbuf.Pixbuf;
+const Gdk = imports.gi.Gdk;
 const Settings = imports.ui.settings;
 const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
@@ -311,7 +313,10 @@ class MyApplet extends Applet.IconApplet {
       return icon_name;
     }
 
-    const dest_name = icon_name.replace(/\//g, "@");
+    const is_ico = icon_name.endsWith(".ico");
+    const dest_name = is_ico
+      ? icon_name.replace(/\//g, "@").replace(/\.ico$/, ".png")
+      : icon_name.replace(/\//g, "@");
     const dest_file = this.icons_dir.get_child(dest_name);
     if (!dest_file.query_exists(null)) {
       const source_file = Gio.File.new_for_path(icon_name);
@@ -319,8 +324,12 @@ class MyApplet extends Applet.IconApplet {
         return undefined;
       }
 
-      global.log("copied to " + dest_file.get_path());
-      source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+      if (is_ico) {
+        const pixbuf = Pixbuf.new_from_file(icon_name);
+        pixbuf!.savev(dest_file.get_path()!.replace(/\.ico$/, ".png"), "png", null, null);
+      } else {
+        source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+      }
     }
 
     // Get rid of the extension
