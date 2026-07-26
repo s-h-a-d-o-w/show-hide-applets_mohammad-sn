@@ -45,8 +45,7 @@ function _(str) {
 var MyApplet = class extends Applet.IconApplet {
   settings;
   orientation;
-  _hideTimeoutId;
-  _reshowingHideTimeoutId;
+  applet_path;
   // Settings-bound properties
   do_autohide;
   disable_starttime_autohide;
@@ -63,6 +62,7 @@ var MyApplet = class extends Applet.IconApplet {
   loadedPanel;
   monitor;
   signal_manager;
+  icons_dir;
   icons = {};
   // Menu items
   menu_item_auto_hide;
@@ -72,16 +72,27 @@ var MyApplet = class extends Applet.IconApplet {
   connected_on_panel_edit_mode_changed;
   connected_on_entered;
   connected_on_allocation_changed;
+  // Timeout IDs
+  _hideTimeoutId;
+  _reshowingHideTimeoutId;
+  _updateIconsTimeoutId;
   constructor(metadata, orientation, panel_height, instance_id) {
     super(orientation, panel_height, instance_id);
     this.orientation = orientation;
+    this.applet_path = metadata.path;
+    global.log("applet_path: " + this.applet_path);
     this._hideTimeoutId = null;
     this._reshowingHideTimeoutId = null;
+    this._updateIconsTimeoutId = null;
     try {
-      Gtk.IconTheme.get_default().append_search_path(metadata.path);
-      if (this.is_vertical()) this.set_applet_icon_symbolic_name("1v");
-      else this.set_applet_icon_symbolic_name("1");
+      Gtk.IconTheme.get_default().append_search_path(this.applet_path);
+      this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
+      if (!this.icons_dir.query_exists(null)) {
+        this.icons_dir.make_directory_with_parents(null);
+      }
+      Gtk.IconTheme.get_default().append_search_path(this.icons_dir.get_path());
       this.loadedPanel = this.panel;
+      this.update_our_icon();
       this.bind_settings();
       this.update_autohide_tooltip();
       this.connected_on_panel_edit_mode_changed = global.settings.connect(
@@ -103,10 +114,6 @@ var MyApplet = class extends Applet.IconApplet {
             if (this.do_hide) this.auto_hide();
           })
         );
-      }
-      if (this._reshowingHideTimeoutId) {
-        Mainloop.source_remove(this._reshowingHideTimeoutId);
-        this._reshowingHideTimeoutId = null;
       }
       Mainloop.timeout_add_seconds(
         1,
@@ -242,6 +249,22 @@ var MyApplet = class extends Applet.IconApplet {
       null
     );
   }
+  ensure_local_icon(icon_name) {
+    if (!icon_name.includes("/")) {
+      return icon_name;
+    }
+    const dest_name = icon_name.replace(/\//g, "@");
+    const dest_file = this.icons_dir.get_child(dest_name);
+    if (!dest_file.query_exists(null)) {
+      const source_file = Gio.File.new_for_path(icon_name);
+      if (!source_file.query_exists(null)) {
+        return void 0;
+      }
+      global.log("copied to " + dest_file.get_path());
+      source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+    }
+    return dest_name.replace(/\.[^.]+$/, "");
+  }
   get_eligible_children() {
     let children = this.get_zone_children();
     let ourIndex = children.indexOf(this.actor);
@@ -275,6 +298,9 @@ var MyApplet = class extends Applet.IconApplet {
   }
   on_allocation_changed() {
     if (this.autohideReshowing && !this.do_hide) {
+      if (this._reshowingHideTimeoutId) {
+        Mainloop.source_remove(this._reshowingHideTimeoutId);
+      }
       this._reshowingHideTimeoutId = Mainloop.timeout_add_seconds(
         this.autohideReshowingTime,
         Lang.bind(this, function() {
@@ -302,7 +328,6 @@ var MyApplet = class extends Applet.IconApplet {
       );
   }
   on_applet_removed_from_panel() {
-    global.log("on_applet_removed_from_panel");
     if (!this.do_hide) {
       this.toggle_hiding();
     }
@@ -314,6 +339,15 @@ var MyApplet = class extends Applet.IconApplet {
     }
     if (this.connected_on_allocation_changed) {
       this.get_our_panel_zone().disconnect(this.connected_on_allocation_changed);
+    }
+    if (this._updateIconsTimeoutId) {
+      Mainloop.source_remove(this._updateIconsTimeoutId);
+    }
+    if (this._reshowingHideTimeoutId) {
+      Mainloop.source_remove(this._reshowingHideTimeoutId);
+    }
+    if (this._hideTimeoutId) {
+      Mainloop.source_remove(this._hideTimeoutId);
     }
   }
   on_applet_middle_clicked() {
@@ -442,8 +476,8 @@ var MyApplet = class extends Applet.IconApplet {
           this.icons[key].last_seen = Date.now();
         });
       } else if (applet._uuid === "systray@cinnamon.org") {
-        for (const j of childBoxLayout.get_first_child().get_children()) {
-          const icon = j.get_child();
+        for (const systrayIcon of childBoxLayout.get_first_child().get_children()) {
+          const icon = systrayIcon.get_child();
           const key = applet._uuid + icon.title;
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
@@ -471,7 +505,7 @@ var MyApplet = class extends Applet.IconApplet {
         delete this.icons[key];
       }
     });
-    Mainloop.timeout_add_seconds(
+    this._updateIconsTimeoutId = Mainloop.timeout_add_seconds(
       30,
       Lang.bind(this, function() {
         this.update_icons();
@@ -522,7 +556,13 @@ var MyApplet = class extends Applet.IconApplet {
       }
       this.menu_items_icon_section.removeAll();
       Object.entries(this.icons).forEach(([key, { name, show, icon_name }]) => {
-        const iconToggle = icon_name && !icon_name.includes("/") ? new PopupMenu.PopupSwitchIconMenuItem(name, show, icon_name, St.IconType.SYMBOLIC) : new PopupMenu.PopupSwitchMenuItem(name, show);
+        const resolved_icon_name = icon_name ? this.ensure_local_icon(icon_name) : void 0;
+        const iconToggle = resolved_icon_name ? new PopupMenu.PopupSwitchIconMenuItem(
+          name,
+          show,
+          resolved_icon_name,
+          icon_name.includes("/") ? St.IconType.FULLCOLOR : St.IconType.SYMBOLIC
+        ) : new PopupMenu.PopupSwitchMenuItem(name, show);
         iconToggle.connect(
           "toggled",
           Lang.bind(this, function() {

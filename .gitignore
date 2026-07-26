@@ -2,6 +2,7 @@
 *.pyc
 */gschemas.compiled
 node_modules/
+/.cursor/
 /.idea/
 package-lock.json
 *.7z
