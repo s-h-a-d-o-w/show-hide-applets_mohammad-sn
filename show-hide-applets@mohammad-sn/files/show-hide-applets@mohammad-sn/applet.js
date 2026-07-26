@@ -356,11 +356,10 @@ var MyApplet = class extends Applet.IconApplet {
       this._hideTimeoutId = null;
     }
     this.update_our_icon();
-    let children = this.get_eligible_children();
-    if (this.do_hide) {
-      this.alreadyHidden = [];
-      for (const child of children) {
-        const applet = child._applet;
+    for (const child of this.get_eligible_children()) {
+      const applet = child._applet;
+      if (this.do_hide) {
+        this.alreadyHidden = [];
         if (!child.visible) {
           this.alreadyHidden.push(child);
         }
@@ -394,10 +393,7 @@ var MyApplet = class extends Applet.IconApplet {
           continue;
         }
         child.hide();
-      }
-    } else {
-      for (const child of children) {
-        const applet = child._applet;
+      } else {
         if (this.alreadyHidden.indexOf(child) < 0) {
           child.show();
         }
@@ -420,13 +416,14 @@ var MyApplet = class extends Applet.IconApplet {
           }
         }
       }
-      if (this.do_autohide && !global.settings.get_boolean("panel-edit-mode"))
-        this._hideTimeoutId = Mainloop.timeout_add_seconds(
-          this.hide_time,
-          Lang.bind(this, function() {
-            this.auto_hide();
-          })
-        );
+    }
+    if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
+      this._hideTimeoutId = Mainloop.timeout_add_seconds(
+        this.hide_time,
+        Lang.bind(this, function() {
+          this.auto_hide();
+        })
+      );
     }
     if (this.statusintooltip) {
       if (this.do_autohide) this.set_applet_tooltip(_("Autohide ON"));

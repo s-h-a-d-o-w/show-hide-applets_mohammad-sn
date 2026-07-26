@@ -423,12 +423,11 @@ class MyApplet extends Applet.IconApplet {
 
     this.update_our_icon();
 
-    let children = this.get_eligible_children();
-    if (this.do_hide) {
-      this.alreadyHidden = [];
+    for (const child of this.get_eligible_children()) {
+      const applet = child._applet;
 
-      for (const child of children) {
-        const applet = child._applet;
+      if (this.do_hide) {
+        this.alreadyHidden = [];
 
         // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
         if (!child.visible) {
@@ -473,12 +472,8 @@ class MyApplet extends Applet.IconApplet {
         }
 
         child.hide();
-      }
-    } else {
-      // No need to check for what should be shown, since we just show everything here.
-      for (const child of children) {
-        const applet = child._applet;
-
+      } else {
+        // No need to check for what should be shown, since we just show everything here.
         if (this.alreadyHidden.indexOf(child) < 0) {
           child.show();
         }
@@ -503,15 +498,16 @@ class MyApplet extends Applet.IconApplet {
           }
         }
       }
+    }
 
-      if (this.do_autohide && !global.settings.get_boolean("panel-edit-mode"))
-        // @ts-expect-error timeout_add_seconds Type is wrong
-        this._hideTimeoutId = Mainloop.timeout_add_seconds(
-          this.hide_time,
-          Lang.bind(this, function (this: MyApplet) {
-            this.auto_hide();
-          }),
-        );
+    if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
+      // @ts-expect-error timeout_add_seconds Type is wrong
+      this._hideTimeoutId = Mainloop.timeout_add_seconds(
+        this.hide_time,
+        Lang.bind(this, function (this: MyApplet) {
+          this.auto_hide();
+        }),
+      );
     }
 
     if (this.statusintooltip) {
