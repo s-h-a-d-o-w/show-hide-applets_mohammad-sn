@@ -238,35 +238,35 @@ class MyApplet extends Applet.IconApplet {
       Settings.BindingDirection.IN,
       "disablestarttimeautohide",
       "disable_starttime_autohide",
-      function () {},
+      function () { },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hoveractivates",
       "hover_activates",
-      function () {},
+      function () { },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hoveractivateshide",
       "hover_activates_hide",
-      function () {},
+      function () { },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hidetime",
       "hide_time",
-      function () {},
+      function () { },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hovertime",
       "hover_time",
-      function () {},
+      function () { },
       null,
     );
     this.settings.bindProperty(
@@ -285,14 +285,14 @@ class MyApplet extends Applet.IconApplet {
       Settings.BindingDirection.IN,
       "autohiderstime",
       "autohideReshowingTime",
-      function (this: MyApplet) {},
+      function (this: MyApplet) { },
       null,
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
       "hideuntilseparator",
       "hide_until_separator",
-      function (this: MyApplet) {},
+      function (this: MyApplet) { },
       null,
     );
   }
@@ -421,12 +421,13 @@ class MyApplet extends Applet.IconApplet {
       this._hideTimeoutId = null;
     }
 
+    this.update_our_icon();
+
     let applets = this.get_zone_children();
     let ourIndex = applets.indexOf(this.actor);
     if (this.do_hide) {
       this.alreadyHidden = [];
-      if (this.is_vertical()) this.set_applet_icon_symbolic_name("2v");
-      else this.set_applet_icon_symbolic_name("2");
+
       for (let i = ourIndex - 1; i > -1; i--) {
         // global.log("Hiding " + applets[i]._applet._uuid);
         // Keep track of icons that were already hidden, not by us.
@@ -474,8 +475,6 @@ class MyApplet extends Applet.IconApplet {
         applets[i].hide();
       }
     } else {
-      if (this.is_vertical()) this.set_applet_icon_symbolic_name("1v");
-      else this.set_applet_icon_symbolic_name("1");
       for (let i = 0; i < ourIndex; i++) {
         if (this.alreadyHidden.indexOf(applets[i]) < 0) {
           applets[i].show();
@@ -593,6 +592,25 @@ class MyApplet extends Applet.IconApplet {
         this.update_icons();
       }),
     );
+  }
+
+  update_our_icon() {
+    if (this.do_hide) {
+      if (this.is_vertical()) {
+        this.set_applet_icon_symbolic_name("2v");
+      }
+      else {
+        this.set_applet_icon_symbolic_name("2");
+      }
+    }
+    else {
+      if (this.is_vertical()) {
+        this.set_applet_icon_symbolic_name("1v");
+      }
+      else {
+        this.set_applet_icon_symbolic_name("1");
+      }
+    }
   }
 
   update_popup_menu() {

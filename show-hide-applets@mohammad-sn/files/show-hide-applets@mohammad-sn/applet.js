@@ -355,12 +355,11 @@ var MyApplet = class extends Applet.IconApplet {
       Mainloop.source_remove(this._hideTimeoutId);
       this._hideTimeoutId = null;
     }
+    this.update_our_icon();
     let applets = this.get_zone_children();
     let ourIndex = applets.indexOf(this.actor);
     if (this.do_hide) {
       this.alreadyHidden = [];
-      if (this.is_vertical()) this.set_applet_icon_symbolic_name("2v");
-      else this.set_applet_icon_symbolic_name("2");
       for (let i = ourIndex - 1; i > -1; i--) {
         if (!applets[i].visible) this.alreadyHidden.push(applets[i]);
         if (applets[i]._applet._uuid == "systray@cinnamon.org") {
@@ -391,8 +390,6 @@ var MyApplet = class extends Applet.IconApplet {
         applets[i].hide();
       }
     } else {
-      if (this.is_vertical()) this.set_applet_icon_symbolic_name("1v");
-      else this.set_applet_icon_symbolic_name("1");
       for (let i = 0; i < ourIndex; i++) {
         if (this.alreadyHidden.indexOf(applets[i]) < 0) {
           applets[i].show();
@@ -485,6 +482,21 @@ var MyApplet = class extends Applet.IconApplet {
         this.update_icons();
       })
     );
+  }
+  update_our_icon() {
+    if (this.do_hide) {
+      if (this.is_vertical()) {
+        this.set_applet_icon_symbolic_name("2v");
+      } else {
+        this.set_applet_icon_symbolic_name("2");
+      }
+    } else {
+      if (this.is_vertical()) {
+        this.set_applet_icon_symbolic_name("1v");
+      } else {
+        this.set_applet_icon_symbolic_name("1");
+      }
+    }
   }
   update_popup_menu() {
     if (!this._applet_context_menu.isOpen) {
