@@ -582,6 +582,10 @@ var MyApplet = class extends Applet.IconApplet {
         ) : new PopupMenu.PopupSwitchMenuItem(name, show);
         iconToggle.connect("toggled", () => {
           this.icons[key].show = !this.icons[key].show;
+          if (!this.do_hide) {
+            this.toggle_hiding();
+            this.toggle_hiding();
+          }
         });
         this.menu_items_icon_section.addMenuItem(iconToggle);
       });

@@ -714,6 +714,12 @@ class MyApplet extends Applet.IconApplet {
         // @ts-expect-error
         iconToggle.connect("toggled", () => {
           this.icons[key].show = !this.icons[key].show;
+
+          // Refresh if currently hidden
+          if (!this.do_hide) {
+            this.toggle_hiding();
+            this.toggle_hiding();
+          }
         });
         this.menu_items_icon_section!.addMenuItem(iconToggle);
       });
