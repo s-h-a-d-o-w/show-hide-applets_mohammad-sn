@@ -512,7 +512,9 @@ class MyApplet extends Applet.IconApplet {
   update_icons() {
     for (const childBoxLayout of this.get_eligible_children()) {
       const applet = childBoxLayout._applet as any;
-      if (applet._uuid === "xapp-status@cinnamon.org") {
+      if (applet._uuid === "separator@cinnamon.org") {
+        continue;
+      } else if (applet._uuid === "xapp-status@cinnamon.org") {
         // `applet` is a CinnamonXAppStatusApplet:
         // https://github.com/linuxmint/cinnamon/blob/master/files/usr/share/cinnamon/applets/xapp-status%40cinnamon.org/applet.js#L391C6-L391C32
         Object.values(applet.statusIcons as Record<string, any>).forEach((icon) => {
@@ -523,7 +525,9 @@ class MyApplet extends Applet.IconApplet {
           const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
 
           // xapp-status@cinnamon.org only renders proxies that have a name AND icon_name! (But icon_name seems to be a space when it's "empty".)
-          if (name.trim() === "" || icon_name.trim() === "") return;
+          if (name.trim() === "" || icon_name.trim() === "") {
+            return;
+          }
 
           const key = applet._uuid + name + icon_name;
           this.icons[key] ??= {

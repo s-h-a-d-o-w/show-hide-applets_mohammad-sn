@@ -423,10 +423,14 @@ var MyApplet = class extends Applet.IconApplet {
   update_icons() {
     for (const childBoxLayout of this.get_eligible_children()) {
       const applet = childBoxLayout._applet;
-      if (applet._uuid === "xapp-status@cinnamon.org") {
+      if (applet._uuid === "separator@cinnamon.org") {
+        continue;
+      } else if (applet._uuid === "xapp-status@cinnamon.org") {
         Object.values(applet.statusIcons).forEach((icon) => {
           const { name, icon_name } = icon.proxy;
-          if (name.trim() === "" || icon_name.trim() === "") return;
+          if (name.trim() === "" || icon_name.trim() === "") {
+            return;
+          }
           const key = applet._uuid + name + icon_name;
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
