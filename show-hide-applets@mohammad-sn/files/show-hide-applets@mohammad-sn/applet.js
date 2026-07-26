@@ -360,27 +360,35 @@ var MyApplet = class extends Applet.IconApplet {
     if (this.do_hide) {
       this.alreadyHidden = [];
       for (const child of children) {
-        if (!child.visible) this.alreadyHidden.push(child);
-        if (child._applet._uuid == "systray@cinnamon.org") {
+        const applet = child._applet;
+        if (!child.visible) {
+          this.alreadyHidden.push(child);
+        }
+        if (applet._uuid == "systray@cinnamon.org") {
           for (const j of child.get_first_child().get_children()) {
+            const icon2 = j.get_child();
+            const key2 = applet._uuid + icon2.title;
+            if (this.icons[key2] && this.icons[key2].show) {
+              continue;
+            }
             j.hide();
           }
           continue;
-        } else if (this.hide_until_separator && child._applet._uuid == "separator@cinnamon.org") {
+        } else if (this.hide_until_separator && applet._uuid == "separator@cinnamon.org") {
           break;
         }
-        if (child._applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = child._applet.statusIcons;
+        if (applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = applet.statusIcons;
           for (const icon2 of Object.values(icons)) {
             const { name: name2, icon_name } = icon2.proxy;
-            const key2 = child._applet._uuid + name2 + icon_name;
+            const key2 = applet._uuid + name2 + icon_name;
             if (this.icons[key2] && this.icons[key2].show) {
               continue;
             }
             icon2.actor.hide();
           }
         }
-        const { uuid, name, icon } = child._applet._meta;
+        const { uuid, name, icon } = applet._meta;
         const key = uuid + name + icon;
         if (this.icons[key] && this.icons[key].show) {
           continue;
@@ -389,10 +397,11 @@ var MyApplet = class extends Applet.IconApplet {
       }
     } else {
       for (const child of children) {
+        const applet = child._applet;
         if (this.alreadyHidden.indexOf(child) < 0) {
           child.show();
         }
-        if (child._applet._uuid == "systray@cinnamon.org") {
+        if (applet._uuid == "systray@cinnamon.org") {
           try {
             for (const j of child.get_first_child().get_children()) {
               j.show();
@@ -401,8 +410,8 @@ var MyApplet = class extends Applet.IconApplet {
             global.logError(e);
           }
         }
-        if (child._applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = child._applet.statusIcons;
+        if (applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = applet.statusIcons;
           for (const icon of Object.values(icons)) {
             const { name, icon_name } = icon.proxy;
             if (name.trim() !== "" && icon_name.trim() !== "") {

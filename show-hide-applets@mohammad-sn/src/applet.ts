@@ -428,33 +428,36 @@ class MyApplet extends Applet.IconApplet {
       this.alreadyHidden = [];
 
       for (const child of children) {
-        // Keep track of icons that were already hidden, not by us.
-        if (!child.visible) this.alreadyHidden.push(child);
-        if (child._applet._uuid == "systray@cinnamon.org") {
+        const applet = child._applet;
+
+        // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
+        if (!child.visible) {
+          this.alreadyHidden.push(child);
+        }
+
+        if (applet._uuid == "systray@cinnamon.org") {
           for (const j of child.get_first_child().get_children()) {
+            const icon = j.get_child();
+            const key = applet._uuid + icon.title
+            if (this.icons[key] && this.icons[key].show) {
+              continue;
+            }
+
             j.hide();
           }
-          // for (const j of tray.get_first_child().get_children()) {
-          //   j.set_size(0, 0);
-          // }
-          // Mainloop.timeout_add(10, () => {
-          //   tray.hide();
-          //   return false;
-          // });
           continue;
         } else if (
           this.hide_until_separator &&
-          child._applet._uuid == "separator@cinnamon.org"
+          applet._uuid == "separator@cinnamon.org"
         ) {
-          // global.log("Stopping at separator");
           break;
         }
 
-        if (child._applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = child._applet.statusIcons as Record<string, any>;
+        if (applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = applet.statusIcons as Record<string, any>;
           for (const icon of Object.values(icons)) {
             const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
-            const key = child._applet._uuid + name + icon_name;
+            const key = applet._uuid + name + icon_name;
             if (this.icons[key] && this.icons[key].show) {
               continue;
             }
@@ -463,7 +466,7 @@ class MyApplet extends Applet.IconApplet {
           }
         }
 
-        const { uuid, name, icon } = child._applet._meta;
+        const { uuid, name, icon } = applet._meta;
         const key = uuid + name + icon;
         if (this.icons[key] && this.icons[key].show) {
           continue;
@@ -472,12 +475,15 @@ class MyApplet extends Applet.IconApplet {
         child.hide();
       }
     } else {
+      // No need to check for what should be shown, since we just show everything here.
       for (const child of children) {
+        const applet = child._applet;
+
         if (this.alreadyHidden.indexOf(child) < 0) {
           child.show();
         }
 
-        if (child._applet._uuid == "systray@cinnamon.org") {
+        if (applet._uuid == "systray@cinnamon.org") {
           try {
             for (const j of child.get_first_child().get_children()) {
               j.show();
@@ -485,13 +491,10 @@ class MyApplet extends Applet.IconApplet {
           } catch (e) {
             global.logError(e);
           }
-          // for (const j of applets[i].get_first_child().get_children()) {
-          //   j.set_size(20, 20);
-          // }
         }
 
-        if (child._applet._uuid === "xapp-status@cinnamon.org") {
-          const icons = child._applet.statusIcons as Record<string, any>;
+        if (applet._uuid === "xapp-status@cinnamon.org") {
+          const icons = applet.statusIcons as Record<string, any>;
           for (const icon of Object.values(icons)) {
             const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
             if (name.trim() !== "" && icon_name.trim() !== "") {
@@ -510,6 +513,7 @@ class MyApplet extends Applet.IconApplet {
           }),
         );
     }
+
     if (this.statusintooltip) {
       if (this.do_autohide) this.set_applet_tooltip(_("Autohide ON"));
       else this.set_applet_tooltip(_("Autohide OFF"));
