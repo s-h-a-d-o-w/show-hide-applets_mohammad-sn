@@ -68,10 +68,6 @@ msgstr ""
 "Aktiveras om du vill dölja panelprogrammen automatiskt, annars får du klicka "
 "för att dölja dem."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr ""
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Dölj inte automatiskt vid systemstart"

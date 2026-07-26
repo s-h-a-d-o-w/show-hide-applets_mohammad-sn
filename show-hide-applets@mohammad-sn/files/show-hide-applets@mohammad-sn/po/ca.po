@@ -66,10 +66,6 @@ msgstr ""
 "El seu estat pot ser canviat utilitzant el clic del mig en aquesta "
 "miniaplicació."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Mostra l'estat d'auto-amagar al consell informatiu"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Desactivar l'auto-amagació a l'inici"

@@ -65,10 +65,6 @@ msgstr ""
 "L'état de masquage peut être modifié en cliquant avec le bouton central de "
 "la souris sur cette applet."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Afficher dans l'infobulle l'état du masquage auto"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Désactiver  l'heure de démarrage du masquage automatique"

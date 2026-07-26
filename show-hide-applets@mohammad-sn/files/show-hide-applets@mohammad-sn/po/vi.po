@@ -63,10 +63,6 @@ msgstr ""
 "Chọn mục này nếu bạn muốn ẩn các applet tự động, nếu không bạn phải nhấp vào applet để thực hiện.\n"
 "Có thể thay đổi trạng thái bằng cách nhấp chuột giữa vào applet này."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Hiển thị trạng thái tự ẩn trong chú giải"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Vô hiệu hóa tự ẩn khi khởi động"

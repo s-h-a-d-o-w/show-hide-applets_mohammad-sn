@@ -65,10 +65,6 @@ msgstr ""
 "különben a kisalkalmazásra kell kattintania ehhez.\n"
 "Állapotát ezen kisalkalmazásra való középső kattintással módosíthatja."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Az automatikus elrejtés állapotának megjelenítése az eszköztippekben"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Letiltja a kezdési idő automatikus elrejtését"

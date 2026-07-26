@@ -59,10 +59,6 @@ msgid ""
 "Its status can be changed by middle-clicking on this applet."
 msgstr ""
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr ""
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr ""

@@ -67,12 +67,6 @@ msgstr ""
 "Puede cambiar su estado haciendo clic con el botón central del ratón sobre "
 "este applet."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr ""
-"Mostrar el estado de Ocultar automáticamente en la información sobre "
-"herramientas"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Desactivar la ocultación automática al inicio"

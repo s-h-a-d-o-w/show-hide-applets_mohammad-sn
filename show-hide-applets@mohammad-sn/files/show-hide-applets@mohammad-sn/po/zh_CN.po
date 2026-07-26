@@ -64,10 +64,6 @@ msgid ""
 "Its status can be changed by middle-clicking on this applet."
 msgstr "如果您想自动隐藏小程序请选中，否则您应该点击小程序来执行此操作"
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr ""
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "禁用启动时自动隐藏"

@@ -64,10 +64,6 @@ msgstr ""
 "De status kan worden gewijzigd door met de middelste muisknop op deze applet "
 "te klikken."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Toon automatisch verbergen status in tooltip"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Starttijd automatisch verbergen uitschakelen"

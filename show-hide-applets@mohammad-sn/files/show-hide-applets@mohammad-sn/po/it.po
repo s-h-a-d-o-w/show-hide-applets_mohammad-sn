@@ -67,10 +67,6 @@ msgstr ""
 "Il suo stato può essere modificato cliccando con il tasto centrale su questa "
 "applet."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Mostra lo stato del l'auto-nascondimento nel tooltip"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Disabilita nascondimento automatico all'avvio"

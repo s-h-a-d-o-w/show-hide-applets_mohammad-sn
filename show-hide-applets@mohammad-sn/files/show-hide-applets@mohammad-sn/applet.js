@@ -49,7 +49,6 @@ var MyApplet = class extends Applet.IconApplet {
   _reshowingHideTimeoutId;
   // Settings-bound properties
   do_autohide;
-  statusintooltip;
   disable_starttime_autohide;
   hover_activates;
   hover_activates_hide;
@@ -84,6 +83,7 @@ var MyApplet = class extends Applet.IconApplet {
       else this.set_applet_icon_symbolic_name("1");
       this.loadedPanel = this.panel;
       this.bind_settings();
+      this.update_autohide_tooltip();
       this.connected_on_panel_edit_mode_changed = global.settings.connect(
         "changed::panel-edit-mode",
         Lang.bind(this, this.on_panel_edit_mode_changed)
@@ -169,20 +169,7 @@ var MyApplet = class extends Applet.IconApplet {
         if (this.menu_item_auto_hide) {
           this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
         }
-      }),
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "statusintooltip",
-      "statusintooltip",
-      Lang.bind(this, function() {
-        if (!this.statusintooltip) {
-          this.set_applet_tooltip("");
-        } else {
-          if (this.do_autohide) this.set_applet_tooltip(_("Autohide ON"));
-          else this.set_applet_tooltip(_("Autohide OFF"));
-        }
+        this.update_autohide_tooltip();
       }),
       null
     );
@@ -425,12 +412,13 @@ var MyApplet = class extends Applet.IconApplet {
         })
       );
     }
-    if (this.statusintooltip) {
-      if (this.do_autohide) this.set_applet_tooltip(_("Autohide ON"));
-      else this.set_applet_tooltip(_("Autohide OFF"));
-    }
+    this.update_autohide_tooltip();
     global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
     this.do_hide = !this.do_hide;
+  }
+  update_autohide_tooltip() {
+    if (this.do_autohide) this.set_applet_tooltip(_("Autohide ON"));
+    else this.set_applet_tooltip(_("Autohide OFF"));
   }
   update_icons() {
     for (const childBoxLayout of this.get_eligible_children()) {

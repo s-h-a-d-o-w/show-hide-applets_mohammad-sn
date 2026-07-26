@@ -66,10 +66,6 @@ msgstr ""
 "på panelprogrammet for at gøre det.\n"
 "Status kan ændres med midterklik på panelprogrammet."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Vis status for automatisk skjul i værktøjstip"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Deaktivér skjul automatisk ved opstart"

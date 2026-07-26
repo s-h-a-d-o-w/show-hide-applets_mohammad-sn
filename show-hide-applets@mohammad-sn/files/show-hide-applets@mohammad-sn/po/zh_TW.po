@@ -61,10 +61,6 @@ msgstr ""
 "勾選此選項會自動隱藏小程式，否則需要手動點選小程式來隱藏。\n"
 "可透過滑鼠中鍵點選此小程式來切換狀態。"
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "在工具提示中顯示自動隱藏狀態"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "停用啟動時的自動隱藏"

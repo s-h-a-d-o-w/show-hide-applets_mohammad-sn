@@ -69,10 +69,6 @@ msgstr ""
 "Aktiviere diese Funktion, wenn du Applets automatisch verstecken möchtest, "
 "ansonsten werden sie nur bei einem Mausklick versteckt."
 
-#. settings-schema.json->statusintooltip->description
-msgid "Show Autohide status in tooltip"
-msgstr "Zeige \"Verstecke automatisch\"-Status im Tooltip"
-
 #. settings-schema.json->disablestarttimeautohide->description
 msgid "Disable start time autohide"
 msgstr "Deaktiviere Verzögerung für das automatische Verstecken"
