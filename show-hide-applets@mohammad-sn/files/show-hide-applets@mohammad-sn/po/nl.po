@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2025-06-13 18:48+0200\n"
 "Last-Translator: qadzek\n"
 "Language-Team: \n"
@@ -16,24 +16,20 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "Automatisch verbergen AAN"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "Automatisch verbergen UIT"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Paneel Bewerk Modus"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Applets toevoegen aan het paneel"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Automatisch verbergen"
 
@@ -64,14 +60,6 @@ msgstr ""
 "De status kan worden gewijzigd door met de middelste muisknop op deze applet "
 "te klikken."
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Starttijd automatisch verbergen uitschakelen"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "indien niet in de automatische verbergen modus"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -80,6 +68,14 @@ msgstr "seconden"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Automatisch verbergen na"
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Starttijd automatisch verbergen uitschakelen"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "indien niet in de automatische verbergen modus"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"

@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2025-04-04 16:15+0300\n"
 "Last-Translator: Kimmo Kujansuu <mrkujansuu@gmail.com>\n"
 "Language-Team: \n"
@@ -19,24 +19,20 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "Piilotus ON"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "Piilotus POIS"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Paneelin muokkaustila"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Lisää sovelmia paneeliin"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Piilota automaattisesti"
 
@@ -66,14 +62,6 @@ msgstr ""
 "napsauttaa hiirellä,\n"
 "Tilaa voidaan muuttaa painamalla hiiren keskipainikkeella."
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Poista käynnistyksessä piilotus käytöstä"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "Jos ei niin piilotustila on automaattinen"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -82,6 +70,14 @@ msgstr "sekuntia"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Piilota automaattisesti "
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Poista käynnistyksessä piilotus käytöstä"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "Jos ei niin piilotustila on automaattinen"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"
@@ -114,3 +110,11 @@ msgstr "Piilota uudelleen automaattisesti"
 #. settings-schema.json->autohiderstime->description
 msgid "Reshowers' autohide delay: "
 msgstr "Piilotuksen viive: "
+
+#. settings-schema.json->hideuntilseparator->description
+msgid "Only hide until next separator"
+msgstr ""
+
+#. settings-schema.json->hideuntilseparator->tooltip
+msgid "Only hide everything until the next separator element occurs."
+msgstr ""

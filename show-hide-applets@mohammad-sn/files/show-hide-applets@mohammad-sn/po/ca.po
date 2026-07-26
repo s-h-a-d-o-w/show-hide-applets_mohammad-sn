@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2025-09-28 16:55+0200\n"
 "Last-Translator: Odyssey <odysseyhyd@gmail.com>\n"
 "Language-Team: \n"
@@ -18,24 +18,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.6\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "Auto-amagar activat"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "Auto-amagar desactivat"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Mode d'edició del tauler"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Afegir miniaplicacions al tauler"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Auto-amagar"
 
@@ -66,14 +62,6 @@ msgstr ""
 "El seu estat pot ser canviat utilitzant el clic del mig en aquesta "
 "miniaplicació."
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Desactivar l'auto-amagació a l'inici"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "si no està en mode d'auto-amagació"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -82,6 +70,14 @@ msgstr "segons"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Auto-amagar després de "
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Desactivar l'auto-amagació a l'inici"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "si no està en mode d'auto-amagació"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"

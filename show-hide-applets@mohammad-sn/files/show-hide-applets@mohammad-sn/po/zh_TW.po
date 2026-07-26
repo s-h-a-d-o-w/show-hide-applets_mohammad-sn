@@ -1,4 +1,4 @@
-## DRAWER (SHOW/HIDE APPLETS)
+# # DRAWER (SHOW/HIDE APPLETS)
 # This file is put in the public domain.
 # mohammad-sn, 2016
 #
@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2025-06-10 23:50+0800\n"
 "Last-Translator: Peter Dave Hello <hsu@peterdavehello.org>\n"
 "Language-Team: \n"
@@ -17,24 +17,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "自動隱藏已啟用"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "自動隱藏已停用"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "面板編輯模式"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "將小程式新增至面板"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "自動隱藏"
 
@@ -61,14 +57,6 @@ msgstr ""
 "勾選此選項會自動隱藏小程式，否則需要手動點選小程式來隱藏。\n"
 "可透過滑鼠中鍵點選此小程式來切換狀態。"
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "停用啟動時的自動隱藏"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "如果未處於自動隱藏模式"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -77,6 +65,14 @@ msgstr "秒"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "自動隱藏延遲時間 "
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "停用啟動時的自動隱藏"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "如果未處於自動隱藏模式"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"

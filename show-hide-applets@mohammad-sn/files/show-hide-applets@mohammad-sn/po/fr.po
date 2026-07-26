@@ -6,8 +6,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
-"Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
+"issues\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2025-10-14 19:56+0200\n"
 "Last-Translator: FabRCT\n"
 "Language-Team: \n"
@@ -17,24 +18,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "Masquage AUTO"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "Masquage MANUEL"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Mode d'édition du panneau"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Ajouter des applets au panneau"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Masquage automatique"
 
@@ -65,14 +62,6 @@ msgstr ""
 "L'état de masquage peut être modifié en cliquant avec le bouton central de "
 "la souris sur cette applet."
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Désactiver  l'heure de démarrage du masquage automatique"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "si pas en mode masquage automatique"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -81,6 +70,14 @@ msgstr "secondes"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Masquer automatiquement après "
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Désactiver  l'heure de démarrage du masquage automatique"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "si pas en mode masquage automatique"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"

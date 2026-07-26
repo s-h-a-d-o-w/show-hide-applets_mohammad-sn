@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2017-05-12 09:11+0200\n"
 "Last-Translator: Åke Engelbrektson <eson@svenskasprakfiler.se>\n"
 "Language-Team: Svenska Språkfiler <contactform@svenskasprakfiler.se>\n"
@@ -19,26 +19,22 @@ msgstr ""
 "X-Generator: Poedit 1.8.7.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 #, fuzzy
 msgid "Autohide ON"
 msgstr "Dölj automatiskt"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 #, fuzzy
 msgid "Autohide OFF"
 msgstr "Dölj automatiskt"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Panelredigeringsläge"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Lägg till panelprogram"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Dölj automatiskt"
 
@@ -68,14 +64,6 @@ msgstr ""
 "Aktiveras om du vill dölja panelprogrammen automatiskt, annars får du klicka "
 "för att dölja dem."
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Dölj inte automatiskt vid systemstart"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "Om  \"Dölj automatiskt\" är avstängt"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -84,6 +72,14 @@ msgstr "sekunder"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Dölj automatiskt efter"
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Dölj inte automatiskt vid systemstart"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "Om  \"Dölj automatiskt\" är avstängt"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"
@@ -116,3 +112,11 @@ msgstr "Dölj automatiskt, panelprogram som visas igen"
 #. settings-schema.json->autohiderstime->description
 msgid "Reshowers' autohide delay: "
 msgstr "Fördröjning för att automatiskt dölja panelprogram som visas igen: "
+
+#. settings-schema.json->hideuntilseparator->description
+msgid "Only hide until next separator"
+msgstr ""
+
+#. settings-schema.json->hideuntilseparator->tooltip
+msgid "Only hide everything until the next separator element occurs."
+msgstr ""

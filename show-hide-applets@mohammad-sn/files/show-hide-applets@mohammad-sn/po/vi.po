@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: loccun <huynhloc.contact@gmail.com>\n"
 "Language-Team: \n"
@@ -18,24 +18,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "Tự ẩn: Bật"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "Tự ẩn: Tắt"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Chế độ chỉnh sửa bảng"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Thêm applet vào bảng"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Tự động ẩn"
 
@@ -44,7 +40,8 @@ msgid ""
 "hide a few applet to have a neater panel, and make them show up again by a "
 "click"
 msgstr ""
-"Ẩn một vài applet để bảng gọn gàng hơn và hiển thị lại chúng bằng một cú nhấp chuột"
+"Ẩn một vài applet để bảng gọn gàng hơn và hiển thị lại chúng bằng một cú "
+"nhấp chuột"
 
 #. metadata.json->name
 msgid "Drawer (show/hide applets)"
@@ -60,16 +57,9 @@ msgid ""
 "on applet to do so.\n"
 "Its status can be changed by middle-clicking on this applet."
 msgstr ""
-"Chọn mục này nếu bạn muốn ẩn các applet tự động, nếu không bạn phải nhấp vào applet để thực hiện.\n"
+"Chọn mục này nếu bạn muốn ẩn các applet tự động, nếu không bạn phải nhấp vào "
+"applet để thực hiện.\n"
 "Có thể thay đổi trạng thái bằng cách nhấp chuột giữa vào applet này."
-
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Vô hiệu hóa tự ẩn khi khởi động"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "nếu không ở chế độ tự ẩn"
 
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
@@ -79,6 +69,14 @@ msgstr "giây"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Tự ẩn sau "
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Vô hiệu hóa tự ẩn khi khởi động"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "nếu không ở chế độ tự ẩn"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"

@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2024-11-20 06:07+0100\n"
+"POT-Creation-Date: 2026-07-26 13:01+0000\n"
 "PO-Revision-Date: 2025-08-27 19:01+0200\n"
 "Last-Translator: Dragone2 <dragone2@risposteinformatiche.it>\n"
 "Language-Team: \n"
@@ -19,24 +19,20 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:60 applet.js:231
+#. applet.js:420
 msgid "Autohide ON"
 msgstr "Auto-nascondimento ON"
 
-#. applet.js:62 applet.js:233
+#. applet.js:421
 msgid "Autohide OFF"
 msgstr "Auto-nascondimento OFF"
 
-#. applet.js:82
+#. applet.js:500
 msgid "Panel Edit mode"
 msgstr "Modalità Modifica Pannello"
 
-#. applet.js:88
-msgid "Add applets to the panel"
-msgstr "Aggiungi applet al pannello"
-
 #. settings-schema.json->do_autohide->description
-#. applet.js:96
+#. applet.js:508
 msgid "Autohide"
 msgstr "Nascondi automaticamente"
 
@@ -67,14 +63,6 @@ msgstr ""
 "Il suo stato può essere modificato cliccando con il tasto centrale su questa "
 "applet."
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Disabilita nascondimento automatico all'avvio"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "se non in modalità nascondi automaticamente"
-
 #. settings-schema.json->hidetime->units
 #. settings-schema.json->autohiderstime->units
 msgid "seconds"
@@ -83,6 +71,14 @@ msgstr "secondi"
 #. settings-schema.json->hidetime->description
 msgid "Autohide after "
 msgstr "Nascondi automaticamente dopo "
+
+#. settings-schema.json->disablestarttimeautohide->description
+msgid "Disable start time autohide"
+msgstr "Disabilita nascondimento automatico all'avvio"
+
+#. settings-schema.json->disablestarttimeautohide->tooltip
+msgid "if not in autohide mode"
+msgstr "se non in modalità nascondi automaticamente"
 
 #. settings-schema.json->hoveractivates->description
 msgid "Activate on hover"
