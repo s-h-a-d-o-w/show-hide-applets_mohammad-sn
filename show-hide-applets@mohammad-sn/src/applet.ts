@@ -2,7 +2,6 @@ const Applet = imports.ui.applet;
 const Lang = imports.lang;
 const Gtk = imports.gi.Gtk;
 const Pixbuf = imports.gi.GdkPixbuf.Pixbuf;
-const Gdk = imports.gi.Gdk;
 const Settings = imports.ui.settings;
 const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
@@ -30,22 +29,22 @@ declare global {
   }
 }
 
-function listAllProps(obj: any): string[] {
-  const seen = new Set();
-  const out = [];
+// function listAllProps(obj: any): string[] {
+//   const seen = new Set();
+//   const out = [];
 
-  while (obj && obj !== Object.prototype) {
-    for (const name of Object.getOwnPropertyNames(obj)) {
-      if (!seen.has(name)) {
-        seen.add(name);
-        out.push(name);
-      }
-    }
-    obj = Object.getPrototypeOf(obj);
-  }
+//   while (obj && obj !== Object.prototype) {
+//     for (const name of Object.getOwnPropertyNames(obj)) {
+//       if (!seen.has(name)) {
+//         seen.add(name);
+//         out.push(name);
+//       }
+//     }
+//     obj = Object.getPrototypeOf(obj);
+//   }
 
-  return out;
-}
+//   return out;
+// }
 
 /**
  * Polyfill for GLib.timeout_add_once (not in Cinnamon 6.6.9's GLib version).
@@ -139,6 +138,14 @@ class MyApplet extends Applet.IconApplet {
     this.last_toggle_hiding_end = 0;
 
     try {
+      this.settings = new Settings.AppletSettings(
+        this,
+        "devtest-show-hide-applets@mohammad-sn",
+        this.instance_id,
+      );
+      this.icons = this.settings.getValue("icons");
+      global.log("icons: " + JSON.stringify(this.icons));
+
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
       if (!this.icons_dir.query_exists(null)) {
@@ -164,15 +171,6 @@ class MyApplet extends Applet.IconApplet {
         Lang.bind(this, this.on_entered),
       );
 
-      this.do_hide = true;
-      this.alreadyHidden = [];
-      if (!this.disable_starttime_autohide || this.do_autohide) {
-        this._hideTimeoutId = timeout_add_seconds_once(2, () => {
-          this._hideTimeoutId = null;
-          if (this.do_hide) this.auto_hide();
-        });
-      }
-
       // Initial populate + start periodic updaters
       timeout_add_seconds_once(1, () => {
         this.update_icons();
@@ -180,13 +178,18 @@ class MyApplet extends Applet.IconApplet {
         this.start_periodic_updaters();
       });
 
-      // TODO: evaluate whether we actually need "queue-relayout" for the more exotic features, like maybe not hiding an icon when it is being hovered. At least I think that's one of the things being done.
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
         "allocation-changed",
         () => {
           this.on_allocation_changed();
         },
       );
+
+      this.do_hide = true;
+      this.alreadyHidden = [];
+      timeout_add_once(10, () => {
+        this.toggle_hiding();
+      });
     } catch (e) {
       global.logError(e);
     }
@@ -221,12 +224,6 @@ class MyApplet extends Applet.IconApplet {
   }
 
   bind_settings() {
-    this.settings = new Settings.AppletSettings(
-      this,
-      "devtest-show-hide-applets@mohammad-sn",
-      this.instance_id,
-    );
-
     this.settings.bindProperty(
       Settings.BindingDirection.BIDIRECTIONAL,
       "do_autohide",
@@ -243,13 +240,6 @@ class MyApplet extends Applet.IconApplet {
 
         this.update_autohide_tooltip();
       },
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "disablestarttimeautohide",
-      "disable_starttime_autohide",
-      function () {},
       null,
     );
     this.settings.bindProperty(
@@ -659,6 +649,8 @@ class MyApplet extends Applet.IconApplet {
         delete this.icons[key];
       }
     });
+
+    this.settings.setValue("icons", this.icons);
   }
 
   update_our_icon() {
@@ -723,6 +715,7 @@ class MyApplet extends Applet.IconApplet {
         // @ts-expect-error
         iconToggle.connect("toggled", () => {
           this.icons[key].show = !this.icons[key].show;
+          this.settings.setValue("icons", this.icons);
 
           // Refresh if currently hidden
           if (!this.do_hide) {

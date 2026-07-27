@@ -17,12 +17,6 @@
     "description": "Autohide after ",
     "tooltip": ""
   },
-  "disablestarttimeautohide": {
-    "type": "checkbox",
-    "default": false,
-    "description": "Disable start time autohide",
-    "tooltip": "if not in autohide mode"
-  },
   "hoveractivates": {
     "type": "checkbox",
     "default": true,
@@ -69,5 +63,10 @@
     "default": true,
     "description": "Only hide until next separator",
     "tooltip": "Only hide everything until the next separator element occurs."
+  },
+  "icons": {
+    "type": "generic",
+    "default": {},
+    "description": "Internal icons state"
   }
 }

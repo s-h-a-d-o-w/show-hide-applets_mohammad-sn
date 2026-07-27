@@ -27,7 +27,6 @@ var Applet = imports.ui.applet;
 var Lang = imports.lang;
 var Gtk = imports.gi.Gtk;
 var Pixbuf = imports.gi.GdkPixbuf.Pixbuf;
-var Gdk = imports.gi.Gdk;
 var Settings = imports.ui.settings;
 var PopupMenu = imports.ui.popupMenu;
 var St = imports.gi.St;
@@ -99,6 +98,13 @@ var MyApplet = class extends Applet.IconApplet {
     this.last_toggle_hiding_start = 0;
     this.last_toggle_hiding_end = 0;
     try {
+      this.settings = new Settings.AppletSettings(
+        this,
+        "devtest-show-hide-applets@mohammad-sn",
+        this.instance_id
+      );
+      this.icons = this.settings.getValue("icons");
+      global.log("icons: " + JSON.stringify(this.icons));
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
       if (!this.icons_dir.query_exists(null)) {
@@ -119,14 +125,6 @@ var MyApplet = class extends Applet.IconApplet {
         "enter-event",
         Lang.bind(this, this.on_entered)
       );
-      this.do_hide = true;
-      this.alreadyHidden = [];
-      if (!this.disable_starttime_autohide || this.do_autohide) {
-        this._hideTimeoutId = timeout_add_seconds_once(2, () => {
-          this._hideTimeoutId = null;
-          if (this.do_hide) this.auto_hide();
-        });
-      }
       timeout_add_seconds_once(1, () => {
         this.update_icons();
         this.update_popup_menu();
@@ -138,6 +136,11 @@ var MyApplet = class extends Applet.IconApplet {
           this.on_allocation_changed();
         }
       );
+      this.do_hide = true;
+      this.alreadyHidden = [];
+      timeout_add_once(10, () => {
+        this.toggle_hiding();
+      });
     } catch (e) {
       global.logError(e);
     }
@@ -167,11 +170,6 @@ var MyApplet = class extends Applet.IconApplet {
     }
   }
   bind_settings() {
-    this.settings = new Settings.AppletSettings(
-      this,
-      "devtest-show-hide-applets@mohammad-sn",
-      this.instance_id
-    );
     this.settings.bindProperty(
       Settings.BindingDirection.BIDIRECTIONAL,
       "do_autohide",
@@ -185,14 +183,6 @@ var MyApplet = class extends Applet.IconApplet {
           this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
         }
         this.update_autohide_tooltip();
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "disablestarttimeautohide",
-      "disable_starttime_autohide",
-      function() {
       },
       null
     );
@@ -536,6 +526,7 @@ var MyApplet = class extends Applet.IconApplet {
         delete this.icons[key];
       }
     });
+    this.settings.setValue("icons", this.icons);
   }
   update_our_icon() {
     if (this.do_hide) {
@@ -589,6 +580,7 @@ var MyApplet = class extends Applet.IconApplet {
         ) : new PopupMenu.PopupSwitchMenuItem(name, show);
         iconToggle.connect("toggled", () => {
           this.icons[key].show = !this.icons[key].show;
+          this.settings.setValue("icons", this.icons);
           if (!this.do_hide) {
             this.toggle_hiding();
             this.toggle_hiding();
