@@ -232,14 +232,6 @@ var MyApplet = class extends Applet.IconApplet {
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
-      "autohiderstime",
-      "autohideReshowingTime",
-      () => {
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
       "hideuntilseparator",
       "hide_until_separator",
       () => {
@@ -299,7 +291,9 @@ var MyApplet = class extends Applet.IconApplet {
   is_vertical() {
     return this.orientation == St.Side.LEFT || this.orientation == St.Side.RIGHT;
   }
+  // This is mostly about the xapps icon tray regularly "showing" its icons.
   on_allocation_changed() {
+    global.log("on_allocation_changed");
     const now = GLib.get_monotonic_time();
     if (
       // 50ms
@@ -308,16 +302,8 @@ var MyApplet = class extends Applet.IconApplet {
       return;
     }
     if (this.autohideReshowing && !this.do_hide) {
-      if (this._reshowingHideTimeoutId) {
-        GLib.source_remove(this._reshowingHideTimeoutId);
-      }
-      this._reshowingHideTimeoutId = timeout_add_seconds_once(this.autohideReshowingTime, () => {
-        this._reshowingHideTimeoutId = null;
-        if (!this.do_hide) {
-          this.do_hide = true;
-          this.toggle_hiding(true);
-        }
-      });
+      this.do_hide = true;
+      this.toggle_hiding(true);
     }
   }
   on_applet_clicked() {

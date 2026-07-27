@@ -43,19 +43,8 @@
   },
   "autohiders": {
     "type": "checkbox",
-    "default": false,
+    "default": true,
     "description": "Autohide reshowing applets",
-    "tooltip": ""
-  },
-  "autohiderstime": {
-    "type": "spinbutton",
-    "default": 1.25,
-    "min": 0,
-    "max": 5,
-    "step": 0.25,
-    "units": "seconds",
-    "dependency": "autohiders",
-    "description": "Reshowers' autohide delay: ",
     "tooltip": ""
   },
   "hideuntilseparator": {

@@ -284,13 +284,6 @@ class MyApplet extends Applet.IconApplet {
     );
     this.settings.bindProperty(
       Settings.BindingDirection.IN,
-      "autohiderstime",
-      "autohideReshowingTime",
-      () => {},
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
       "hideuntilseparator",
       "hide_until_separator",
       () => {},
@@ -364,7 +357,10 @@ class MyApplet extends Applet.IconApplet {
     return this.orientation == St.Side.LEFT || this.orientation == St.Side.RIGHT;
   }
 
+  // This is mostly about the xapps icon tray regularly "showing" its icons.
   on_allocation_changed() {
+    global.log("on_allocation_changed");
+
     // Event was probably triggered by us.
     // While this currently wouldn't result in an infinite loop, it's probably a good idea to ignore events that are triggered by us changing the panel content.
     const now = GLib.get_monotonic_time();
@@ -376,20 +372,11 @@ class MyApplet extends Applet.IconApplet {
       return;
     }
 
+    // Icons should currently be hidden, as far as we are concerned.
     if (this.autohideReshowing && !this.do_hide) {
-      if (this._reshowingHideTimeoutId) {
-        GLib.source_remove(this._reshowingHideTimeoutId);
-      }
-
-      this._reshowingHideTimeoutId = timeout_add_seconds_once(this.autohideReshowingTime, () => {
-        this._reshowingHideTimeoutId = null;
-        // We only really care when everything is hidden currently.
-        if (!this.do_hide) {
-          // Trigger hiding again, to hide reshown items again.
-          this.do_hide = true;
-          this.toggle_hiding(true);
-        }
-      });
+      // Trigger hiding again, to hide reshown icons again.
+      this.do_hide = true;
+      this.toggle_hiding(true);
     }
   }
 
@@ -536,7 +523,8 @@ class MyApplet extends Applet.IconApplet {
 
           child.hide();
         } else {
-          // No need to check for what should be shown, since we just show everything here.
+          // Don't show icons that were already hidden by external code.
+          // This also covers the case where one of them switches visibility and triggers an allocation_changed event => if it was known as previously hidden, we don't hide it. Which is generally what you want with icons that switch between hidden and visible by themselves.
           if (this.alreadyHidden.indexOf(child) < 0) {
             child.show();
           }
