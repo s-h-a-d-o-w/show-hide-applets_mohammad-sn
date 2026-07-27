@@ -35,7 +35,7 @@ var gettext = imports.gettext;
 var Gio = imports.gi.Gio;
 var UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
-var ICON_SWITCH_STORE_DURATION = 5 * 60 * 1e3;
+var ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1e3;
 function _(str) {
   return gettext.dgettext(UUID, str);
 }
@@ -104,7 +104,6 @@ var MyApplet = class extends Applet.IconApplet {
         this.instance_id
       );
       this.icons = this.settings.getValue("icons");
-      global.log("icons: " + JSON.stringify(this.icons));
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
       if (!this.icons_dir.query_exists(null)) {
@@ -170,74 +169,50 @@ var MyApplet = class extends Applet.IconApplet {
     }
   }
   bind_settings() {
-    this.settings.bindProperty(
-      Settings.BindingDirection.BIDIRECTIONAL,
-      "do_autohide",
-      "do_autohide",
-      () => {
-        if (this._hideTimeoutId && !this.do_autohide) {
-          GLib.source_remove(this._hideTimeoutId);
-          this._hideTimeoutId = null;
-        } else if (this.do_autohide && this.do_hide) this.auto_hide();
-        if (this.menu_item_auto_hide) {
-          this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
-        }
-        this.update_autohide_tooltip();
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hoveractivates",
-      "hover_activates",
-      function() {
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hoveractivateshide",
-      "hover_activates_hide",
-      function() {
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hidetime",
-      "hide_time",
-      function() {
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hovertime",
-      "hover_time",
-      function() {
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "autohiders",
-      "autohideReshowing",
-      () => {
-        if (!this.do_hide) {
-          this.toggle_hiding();
-          this.auto_hide();
-        }
-      },
-      null
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hideuntilseparator",
-      "hide_until_separator",
-      () => {
-      },
-      null
-    );
+    try {
+      this.settings.bindProperty(
+        Settings.BindingDirection.BIDIRECTIONAL,
+        "do_autohide",
+        "do_autohide",
+        () => {
+          if (this._hideTimeoutId && !this.do_autohide) {
+            GLib.source_remove(this._hideTimeoutId);
+            this._hideTimeoutId = null;
+          } else if (this.do_autohide && this.do_hide) {
+            this.auto_hide();
+          }
+          if (this.menu_item_auto_hide) {
+            this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
+          }
+          this.update_autohide_tooltip();
+        },
+        null
+      );
+      this.settings.bindProperty(Settings.BindingDirection.IN, "hoveractivates", "hover_activates");
+      this.settings.bindProperty(
+        Settings.BindingDirection.IN,
+        "hoveractivateshide",
+        "hover_activates_hide"
+      );
+      this.settings.bindProperty(Settings.BindingDirection.IN, "hidetime", "hide_time");
+      this.settings.bindProperty(Settings.BindingDirection.IN, "hovertime", "hover_time");
+      this.settings.bindProperty(
+        Settings.BindingDirection.IN,
+        "autohiders",
+        "autohideReshowing",
+        () => {
+          this.refresh_if_hidden();
+        },
+        null
+      );
+      this.settings.bindProperty(
+        Settings.BindingDirection.IN,
+        "hideuntilseparator",
+        "hide_until_separator"
+      );
+    } catch (e) {
+      global.logError(e);
+    }
   }
   ensure_local_icon(icon_name) {
     if (!icon_name.includes("/")) {
@@ -301,9 +276,8 @@ var MyApplet = class extends Applet.IconApplet {
     ) {
       return;
     }
-    if (this.autohideReshowing && !this.do_hide) {
-      this.do_hide = true;
-      this.toggle_hiding(true);
+    if (this.autohideReshowing) {
+      this.refresh_if_hidden();
     }
   }
   on_applet_clicked() {
@@ -361,6 +335,12 @@ var MyApplet = class extends Applet.IconApplet {
   }
   on_orientation_changed(orientation) {
     this.orientation = orientation;
+  }
+  refresh_if_hidden() {
+    if (!this.do_hide) {
+      this.do_hide = true;
+      this.toggle_hiding(true);
+    }
   }
   start_periodic_updaters() {
     this._updateIconsTimeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
@@ -476,7 +456,7 @@ var MyApplet = class extends Applet.IconApplet {
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
             name,
-            icon_name,
+            icon_name: icon_name ? this.ensure_local_icon(icon_name) : void 0,
             last_seen: Date.now(),
             show: false
           };
@@ -512,6 +492,10 @@ var MyApplet = class extends Applet.IconApplet {
         delete this.icons[key];
       }
     });
+    const iconValues = Object.values(this.icons);
+    if (iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" && iconValues[iconValues.length - 1]?.ownerUuid !== "xapp-status@cinnamon.org") {
+      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
+    }
     this.settings.setValue("icons", this.icons);
   }
   update_our_icon() {
@@ -537,6 +521,19 @@ var MyApplet = class extends Applet.IconApplet {
         this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem(), 0);
         this._applet_context_menu.addMenuItem(this.menu_items_icon_section, 0);
         this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem(), 0);
+        const menu_item_reset_icons_list = new PopupMenu.PopupMenuItem(_("Reset icons list"));
+        menu_item_reset_icons_list.connect("activate", () => {
+          global.log("Resetting icons list");
+          this._applet_context_menu.close(false);
+          this.icons = {};
+          this.update_icons();
+          this.update_popup_menu();
+          this.refresh_if_hidden();
+          timeout_add_once(10, () => {
+            this._applet_context_menu.open(false);
+          });
+        });
+        this._applet_context_menu.addMenuItem(menu_item_reset_icons_list, 0);
         this.menu_item_panel_edit_mode = new PopupMenu.PopupSwitchMenuItem(
           _("Panel Edit mode"),
           global.settings.get_boolean("panel-edit-mode")
@@ -557,11 +554,10 @@ var MyApplet = class extends Applet.IconApplet {
       }
       this.menu_items_icon_section.removeAll();
       Object.entries(this.icons).forEach(([key, { name, show, icon_name }]) => {
-        const resolved_icon_name = icon_name ? this.ensure_local_icon(icon_name) : void 0;
-        const iconToggle = resolved_icon_name ? new PopupMenu.PopupSwitchIconMenuItem(
+        const iconToggle = icon_name ? new PopupMenu.PopupSwitchIconMenuItem(
           name,
           show,
-          resolved_icon_name,
+          icon_name,
           icon_name.includes("/") ? St.IconType.FULLCOLOR : St.IconType.SYMBOLIC
         ) : new PopupMenu.PopupSwitchMenuItem(name, show);
         iconToggle.connect("toggled", () => {

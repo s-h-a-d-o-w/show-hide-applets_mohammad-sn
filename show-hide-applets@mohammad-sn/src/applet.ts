@@ -13,7 +13,8 @@ const Gio = imports.gi.Gio;
 const UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
 
-const ICON_SWITCH_STORE_DURATION = 5 * 60 * 1000; // 5 minutes
+// 7 days, since some apps use multiple distinct icons but only one at the time. It's not possible to identify correlated icons by app name (multiple apps can have the same name), so users unfortunately sometimes have to toggle different icon states "on" if that is an app that they always want to see.
+const ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 function _(str: string): string {
   return gettext.dgettext(UUID, str);
@@ -144,7 +145,6 @@ class MyApplet extends Applet.IconApplet {
         this.instance_id,
       );
       this.icons = this.settings.getValue("icons");
-      global.log("icons: " + JSON.stringify(this.icons));
 
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
@@ -224,71 +224,52 @@ class MyApplet extends Applet.IconApplet {
   }
 
   bind_settings() {
-    this.settings.bindProperty(
-      Settings.BindingDirection.BIDIRECTIONAL,
-      "do_autohide",
-      "do_autohide",
-      () => {
-        if (this._hideTimeoutId && !this.do_autohide) {
-          GLib.source_remove(this._hideTimeoutId);
-          this._hideTimeoutId = null;
-        } else if (this.do_autohide && this.do_hide) this.auto_hide();
+    try {
+      this.settings.bindProperty(
+        Settings.BindingDirection.BIDIRECTIONAL,
+        "do_autohide",
+        "do_autohide",
+        () => {
+          if (this._hideTimeoutId && !this.do_autohide) {
+            GLib.source_remove(this._hideTimeoutId);
+            this._hideTimeoutId = null;
+          } else if (this.do_autohide && this.do_hide) {
+            this.auto_hide();
+          }
 
-        if (this.menu_item_auto_hide) {
-          this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
-        }
+          if (this.menu_item_auto_hide) {
+            this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
+          }
 
-        this.update_autohide_tooltip();
-      },
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hoveractivates",
-      "hover_activates",
-      function () {},
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hoveractivateshide",
-      "hover_activates_hide",
-      function () {},
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hidetime",
-      "hide_time",
-      function () {},
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hovertime",
-      "hover_time",
-      function () {},
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "autohiders",
-      "autohideReshowing",
-      () => {
-        if (!this.do_hide) {
-          this.toggle_hiding();
-          this.auto_hide();
-        }
-      },
-      null,
-    );
-    this.settings.bindProperty(
-      Settings.BindingDirection.IN,
-      "hideuntilseparator",
-      "hide_until_separator",
-      () => {},
-      null,
-    );
+          this.update_autohide_tooltip();
+        },
+        null,
+      );
+      this.settings.bindProperty(Settings.BindingDirection.IN, "hoveractivates", "hover_activates");
+      this.settings.bindProperty(
+        Settings.BindingDirection.IN,
+        "hoveractivateshide",
+        "hover_activates_hide",
+      );
+      this.settings.bindProperty(Settings.BindingDirection.IN, "hidetime", "hide_time");
+      this.settings.bindProperty(Settings.BindingDirection.IN, "hovertime", "hover_time");
+      this.settings.bindProperty(
+        Settings.BindingDirection.IN,
+        "autohiders",
+        "autohideReshowing",
+        () => {
+          this.refresh_if_hidden();
+        },
+        null,
+      );
+      this.settings.bindProperty(
+        Settings.BindingDirection.IN,
+        "hideuntilseparator",
+        "hide_until_separator",
+      );
+    } catch (e) {
+      global.logError(e);
+    }
   }
 
   ensure_local_icon(icon_name: string) {
@@ -372,11 +353,8 @@ class MyApplet extends Applet.IconApplet {
       return;
     }
 
-    // Icons should currently be hidden, as far as we are concerned.
-    if (this.autohideReshowing && !this.do_hide) {
-      // Trigger hiding again, to hide reshown icons again.
-      this.do_hide = true;
-      this.toggle_hiding(true);
+    if (this.autohideReshowing) {
+      this.refresh_if_hidden();
     }
   }
 
@@ -448,6 +426,13 @@ class MyApplet extends Applet.IconApplet {
 
   on_orientation_changed(orientation: imports.gi.St.Side) {
     this.orientation = orientation;
+  }
+
+  refresh_if_hidden() {
+    if (!this.do_hide) {
+      this.do_hide = true;
+      this.toggle_hiding(true);
+    }
   }
 
   start_periodic_updaters() {
@@ -595,7 +580,7 @@ class MyApplet extends Applet.IconApplet {
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
             name,
-            icon_name,
+            icon_name: icon_name ? this.ensure_local_icon(icon_name) : undefined,
             last_seen: Date.now(),
             show: false,
           };
@@ -638,6 +623,15 @@ class MyApplet extends Applet.IconApplet {
       }
     });
 
+    // Make sure xapp-status@cinnamon.org icons are at the bottom of the list.
+    const iconValues = Object.values(this.icons);
+    if (
+      iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" &&
+      iconValues[iconValues.length - 1]?.ownerUuid !== "xapp-status@cinnamon.org"
+    ) {
+      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
+    }
+
     this.settings.setValue("icons", this.icons);
   }
 
@@ -667,6 +661,21 @@ class MyApplet extends Applet.IconApplet {
         this._applet_context_menu.addMenuItem(this.menu_items_icon_section, 0);
         this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem(), 0);
 
+        const menu_item_reset_icons_list = new PopupMenu.PopupMenuItem(_("Reset icons list"));
+        menu_item_reset_icons_list.connect("activate", () => {
+          global.log("Resetting icons list");
+          this._applet_context_menu.close(false);
+          this.icons = {};
+          this.update_icons();
+          this.update_popup_menu();
+          this.refresh_if_hidden();
+          // Wait for external close event to be processed
+          timeout_add_once(10, () => {
+            this._applet_context_menu.open(false);
+          });
+        });
+        this._applet_context_menu.addMenuItem(menu_item_reset_icons_list, 0);
+
         this.menu_item_panel_edit_mode = new PopupMenu.PopupSwitchMenuItem(
           _("Panel Edit mode"),
           global.settings.get_boolean("panel-edit-mode"),
@@ -689,14 +698,11 @@ class MyApplet extends Applet.IconApplet {
 
       this.menu_items_icon_section.removeAll();
       Object.entries(this.icons).forEach(([key, { name, show, icon_name }]) => {
-        // PopupSwitchIconMenuItem can't render images from paths
-        const resolved_icon_name = icon_name ? this.ensure_local_icon(icon_name) : undefined;
-        // global.log("resolved_icon_name: " + resolved_icon_name);
-        const iconToggle = resolved_icon_name
+        const iconToggle = icon_name
           ? new PopupMenu.PopupSwitchIconMenuItem(
               name,
               show,
-              resolved_icon_name,
+              icon_name,
               icon_name!.includes("/") ? St.IconType.FULLCOLOR : St.IconType.SYMBOLIC,
             )
           : new PopupMenu.PopupSwitchMenuItem(name, show);
