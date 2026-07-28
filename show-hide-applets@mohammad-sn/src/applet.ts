@@ -137,6 +137,8 @@ class MyApplet extends Applet.IconApplet {
     this._updateIconsTimeoutId = null;
     this.last_toggle_hiding_start = 0;
     this.last_toggle_hiding_end = 0;
+    this.do_hide = true;
+    this.alreadyHidden = [];
 
     try {
       this.settings = new Settings.AppletSettings(
@@ -185,11 +187,12 @@ class MyApplet extends Applet.IconApplet {
         },
       );
 
-      this.do_hide = true;
-      this.alreadyHidden = [];
-      timeout_add_once(10, () => {
-        this.toggle_hiding();
-      });
+      if (this.do_autohide) {
+        this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
+          this._hideTimeoutId = null;
+          this.auto_hide();
+        });
+      }
     } catch (e) {
       global.logError(e);
     }
@@ -487,39 +490,49 @@ class MyApplet extends Applet.IconApplet {
         const applet = child._applet;
 
         if (this.do_hide) {
-          // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
-          if (!child.visible && !refreshing) {
-            // global.log("Adding to alreadyHidden: " + applet._uuid);
-            this.alreadyHidden.push(child);
+          if (this.hide_until_separator && applet._uuid == "separator@cinnamon.org") {
+            break;
           }
 
           if (applet._uuid == "systray@cinnamon.org") {
-            for (const j of child.get_first_child().get_children()) {
-              const icon = j.get_child();
+            for (const systrayChild of child.get_first_child().get_children()) {
+              const icon = systrayChild.get_child();
+
+              if (!systrayChild.visible && !refreshing) {
+                this.alreadyHidden.push(systrayChild);
+              }
+
               const key = applet._uuid + icon.title;
               if (this.icons[key] && this.icons[key].show) {
                 continue;
               }
 
-              j.hide();
+              systrayChild.hide();
             }
             continue;
-          } else if (this.hide_until_separator && applet._uuid == "separator@cinnamon.org") {
-            break;
           }
 
           if (applet._uuid === "xapp-status@cinnamon.org") {
-            const icons = applet.statusIcons as Record<string, any>;
-            for (const icon of Object.values(icons)) {
-              const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
+            for (const xappChild of Object.values(applet.statusIcons as Record<string, any>)) {
+              const { name, icon_name, visible } = xappChild.proxy as StatusIconInterfaceProxy;
+
+              if (!visible && !refreshing) {
+                this.alreadyHidden.push(xappChild);
+              }
+
               const key = applet._uuid + name + icon_name;
               if (this.icons[key] && this.icons[key].show) {
                 continue;
               }
 
-              icon.actor.hide();
+              xappChild.actor.hide();
             }
             continue;
+          }
+
+          // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
+          if (!child.visible && !refreshing) {
+            this.alreadyHidden.push(child);
           }
 
           const { uuid, name, icon } = applet._meta;
@@ -527,19 +540,20 @@ class MyApplet extends Applet.IconApplet {
           if (this.icons[key] && this.icons[key].show) {
             continue;
           }
-
           child.hide();
         } else {
           // Don't show icons that were already hidden by external code.
           // This also covers the case where one of them switches visibility and triggers an allocation_changed event => if it was known as previously hidden, we don't hide it. Which is generally what you want with icons that switch between hidden and visible by themselves.
-          if (this.alreadyHidden.indexOf(child) < 0) {
+          if (!this.alreadyHidden.includes(child)) {
             child.show();
           }
 
-          if (applet._uuid == "systray@cinnamon.org") {
+          if (applet._uuid === "systray@cinnamon.org") {
             try {
-              for (const j of child.get_first_child().get_children()) {
-                j.show();
+              for (const systrayChild of child.get_first_child().get_children()) {
+                if (!this.alreadyHidden.includes(systrayChild)) {
+                  systrayChild.show();
+                }
               }
             } catch (e) {
               global.logError(e);
@@ -547,11 +561,14 @@ class MyApplet extends Applet.IconApplet {
           }
 
           if (applet._uuid === "xapp-status@cinnamon.org") {
-            const icons = applet.statusIcons as Record<string, any>;
-            for (const icon of Object.values(icons)) {
-              const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
-              if (name.trim() !== "" && icon_name.trim() !== "") {
-                icon.actor.show();
+            for (const xappChild of Object.values(applet.statusIcons as Record<string, any>)) {
+              const { name, icon_name } = xappChild.proxy as StatusIconInterfaceProxy;
+              if (
+                name.trim() !== "" &&
+                icon_name.trim() !== "" &&
+                !this.alreadyHidden.includes(xappChild)
+              ) {
+                xappChild.actor.show();
               }
             }
           }

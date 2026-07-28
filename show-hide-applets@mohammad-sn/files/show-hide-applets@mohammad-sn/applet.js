@@ -97,6 +97,8 @@ var MyApplet = class extends Applet.IconApplet {
     this._updateIconsTimeoutId = null;
     this.last_toggle_hiding_start = 0;
     this.last_toggle_hiding_end = 0;
+    this.do_hide = true;
+    this.alreadyHidden = [];
     try {
       this.settings = new Settings.AppletSettings(
         this,
@@ -135,11 +137,12 @@ var MyApplet = class extends Applet.IconApplet {
           this.on_allocation_changed();
         }
       );
-      this.do_hide = true;
-      this.alreadyHidden = [];
-      timeout_add_once(10, () => {
-        this.toggle_hiding();
-      });
+      if (this.do_autohide) {
+        this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
+          this._hideTimeoutId = null;
+          this.auto_hide();
+        });
+      }
     } catch (e) {
       global.logError(e);
     }
@@ -382,33 +385,39 @@ var MyApplet = class extends Applet.IconApplet {
       for (const child of this.get_eligible_children()) {
         const applet = child._applet;
         if (this.do_hide) {
-          if (!child.visible && !refreshing) {
-            this.alreadyHidden.push(child);
+          if (this.hide_until_separator && applet._uuid == "separator@cinnamon.org") {
+            break;
           }
           if (applet._uuid == "systray@cinnamon.org") {
-            for (const j of child.get_first_child().get_children()) {
-              const icon2 = j.get_child();
+            for (const systrayChild of child.get_first_child().get_children()) {
+              const icon2 = systrayChild.get_child();
+              if (!systrayChild.visible && !refreshing) {
+                this.alreadyHidden.push(systrayChild);
+              }
               const key2 = applet._uuid + icon2.title;
               if (this.icons[key2] && this.icons[key2].show) {
                 continue;
               }
-              j.hide();
+              systrayChild.hide();
             }
             continue;
-          } else if (this.hide_until_separator && applet._uuid == "separator@cinnamon.org") {
-            break;
           }
           if (applet._uuid === "xapp-status@cinnamon.org") {
-            const icons = applet.statusIcons;
-            for (const icon2 of Object.values(icons)) {
-              const { name: name2, icon_name } = icon2.proxy;
+            for (const xappChild of Object.values(applet.statusIcons)) {
+              const { name: name2, icon_name, visible } = xappChild.proxy;
+              if (!visible && !refreshing) {
+                this.alreadyHidden.push(xappChild);
+              }
               const key2 = applet._uuid + name2 + icon_name;
               if (this.icons[key2] && this.icons[key2].show) {
                 continue;
               }
-              icon2.actor.hide();
+              xappChild.actor.hide();
             }
             continue;
+          }
+          if (!child.visible && !refreshing) {
+            this.alreadyHidden.push(child);
           }
           const { uuid, name, icon } = applet._meta;
           const key = uuid + name + icon;
@@ -417,24 +426,25 @@ var MyApplet = class extends Applet.IconApplet {
           }
           child.hide();
         } else {
-          if (this.alreadyHidden.indexOf(child) < 0) {
+          if (!this.alreadyHidden.includes(child)) {
             child.show();
           }
-          if (applet._uuid == "systray@cinnamon.org") {
+          if (applet._uuid === "systray@cinnamon.org") {
             try {
-              for (const j of child.get_first_child().get_children()) {
-                j.show();
+              for (const systrayChild of child.get_first_child().get_children()) {
+                if (!this.alreadyHidden.includes(systrayChild)) {
+                  systrayChild.show();
+                }
               }
             } catch (e) {
               global.logError(e);
             }
           }
           if (applet._uuid === "xapp-status@cinnamon.org") {
-            const icons = applet.statusIcons;
-            for (const icon of Object.values(icons)) {
-              const { name, icon_name } = icon.proxy;
-              if (name.trim() !== "" && icon_name.trim() !== "") {
-                icon.actor.show();
+            for (const xappChild of Object.values(applet.statusIcons)) {
+              const { name, icon_name } = xappChild.proxy;
+              if (name.trim() !== "" && icon_name.trim() !== "" && !this.alreadyHidden.includes(xappChild)) {
+                xappChild.actor.show();
               }
             }
           }
