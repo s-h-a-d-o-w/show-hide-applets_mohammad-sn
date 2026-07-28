@@ -316,32 +316,38 @@ class MyApplet extends IconApplet {
       return icon_name;
     }
 
-    const is_ico = icon_name.endsWith(".ico");
-    const dest_name = is_ico
-      ? icon_name.replace(/\//g, "@").replace(/\.ico$/, ".png")
-      : icon_name.replace(/\//g, "@");
-    const dest_file = this.icons_dir.get_child(dest_name);
-    if (!dest_file.query_exists(null)) {
-      const source_file = Gio.File.new_for_path(icon_name);
-      if (!source_file.query_exists(null)) {
-        return undefined;
+    try {
+      const is_ico = icon_name.endsWith(".ico");
+      const dest_name = is_ico
+        ? icon_name.replaceAll("/", "@").replace(".ico", ".png")
+        : icon_name.replaceAll("/", "@");
+      const dest_file = this.icons_dir.get_child(dest_name);
+
+      if (!dest_file.query_exists(null)) {
+        const source_file = Gio.File.new_for_path(icon_name);
+        if (!source_file.query_exists(null)) {
+          return undefined;
+        }
+
+        if (is_ico) {
+          const pixbuf = Pixbuf.new_from_file(icon_name);
+          pixbuf!.savev(
+            dest_file.get_path()!.replace(/\.ico$/u, ".png"),
+            "png",
+            null,
+            null,
+          );
+        } else {
+          source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+        }
       }
 
-      if (is_ico) {
-        const pixbuf = Pixbuf.new_from_file(icon_name);
-        pixbuf!.savev(
-          dest_file.get_path()!.replace(/\.ico$/, ".png"),
-          "png",
-          null,
-          null,
-        );
-      } else {
-        source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
-      }
+      // Get rid of the extension
+      return dest_name.replace(/\.[^.]+$/u, "");
+    } catch (error) {
+      global.logError(error);
+      return undefined;
     }
-
-    // Get rid of the extension
-    return dest_name.replace(/\.[^.]+$/, "");
   }
 
   get_eligible_children() {
@@ -749,6 +755,7 @@ class MyApplet extends IconApplet {
 
     Object.entries(this.icons).forEach(([key, icon]) => {
       if (Date.now() - icon.last_seen > ICON_SWITCH_STORE_DURATION) {
+        // oxlint-disable-next-line typescript/no-dynamic-delete
         delete this.icons[key];
       }
     });
@@ -757,8 +764,7 @@ class MyApplet extends IconApplet {
     const iconValues = Object.values(this.icons);
     if (
       iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" &&
-      iconValues[iconValues.length - 1]?.ownerUuid !==
-        "xapp-status@cinnamon.org"
+      iconValues.at(-1)?.ownerUuid !== "xapp-status@cinnamon.org"
     ) {
       this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
     }

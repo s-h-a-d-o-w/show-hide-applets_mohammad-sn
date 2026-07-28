@@ -3,6 +3,7 @@ import { defineConfig } from "oxlint";
 
 export default defineConfig({
   extends: [sharedConfig],
+  ignorePatterns: ["files/**"],
   globals: {
     global: "readonly",
     imports: "readonly",
@@ -11,7 +12,7 @@ export default defineConfig({
     "unicorn/no-null": "off",
     "typescript/no-explicit-any": "off",
 
-    // JS engine in Cinnamon is too old for these:
+    // JS engine in Cinnamon doesn't support these:
     "unicorn/no-array-reverse": "off",
     "unicorn/prefer-structured-clone": "off",
   },

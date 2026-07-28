@@ -22,7 +22,7 @@
   },
   "hoveractivates": {
     "type": "checkbox",
-    "default": true,
+    "default": false,
     "description": "Show on hover",
     "tooltip": "show applets on mouse hover"
   },

@@ -249,27 +249,32 @@ var MyApplet = class extends IconApplet {
     if (!icon_name.includes("/")) {
       return icon_name;
     }
-    const is_ico = icon_name.endsWith(".ico");
-    const dest_name = is_ico ? icon_name.replace(/\//g, "@").replace(/\.ico$/, ".png") : icon_name.replace(/\//g, "@");
-    const dest_file = this.icons_dir.get_child(dest_name);
-    if (!dest_file.query_exists(null)) {
-      const source_file = Gio.File.new_for_path(icon_name);
-      if (!source_file.query_exists(null)) {
-        return void 0;
+    try {
+      const is_ico = icon_name.endsWith(".ico");
+      const dest_name = is_ico ? icon_name.replaceAll("/", "@").replace(".ico", ".png") : icon_name.replaceAll("/", "@");
+      const dest_file = this.icons_dir.get_child(dest_name);
+      if (!dest_file.query_exists(null)) {
+        const source_file = Gio.File.new_for_path(icon_name);
+        if (!source_file.query_exists(null)) {
+          return void 0;
+        }
+        if (is_ico) {
+          const pixbuf = Pixbuf.new_from_file(icon_name);
+          pixbuf.savev(
+            dest_file.get_path().replace(/\.ico$/u, ".png"),
+            "png",
+            null,
+            null
+          );
+        } else {
+          source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+        }
       }
-      if (is_ico) {
-        const pixbuf = Pixbuf.new_from_file(icon_name);
-        pixbuf.savev(
-          dest_file.get_path().replace(/\.ico$/, ".png"),
-          "png",
-          null,
-          null
-        );
-      } else {
-        source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
-      }
+      return dest_name.replace(/\.[^.]+$/u, "");
+    } catch (error) {
+      global.logError(error);
+      return void 0;
     }
-    return dest_name.replace(/\.[^.]+$/, "");
   }
   get_eligible_children() {
     const children = this.get_zone_children();
@@ -580,7 +585,7 @@ var MyApplet = class extends IconApplet {
       }
     });
     const iconValues = Object.values(this.icons);
-    if (iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" && iconValues[iconValues.length - 1]?.ownerUuid !== "xapp-status@cinnamon.org") {
+    if (iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" && iconValues.at(-1)?.ownerUuid !== "xapp-status@cinnamon.org") {
       this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
     }
     this.settings.setValue("icons", this.icons);
