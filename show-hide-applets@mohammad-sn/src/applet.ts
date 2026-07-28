@@ -435,6 +435,28 @@ class MyApplet extends Applet.IconApplet {
     }
   }
 
+  reset_icons() {
+    this._applet_context_menu.close(false);
+
+    const iconsBackup = JSON.parse(JSON.stringify(this.icons)) as typeof this.icons;
+    this.icons = {};
+    this.update_icons();
+    // Restore `show` status
+    Object.entries(iconsBackup).forEach(([key, { show }]) => {
+      if (this.icons[key]) {
+        this.icons[key].show = show;
+      }
+    });
+
+    this.update_popup_menu();
+    this.refresh_if_hidden();
+
+    // Wait for external close event to be processed before opening the menu again
+    timeout_add_once(10, () => {
+      this._applet_context_menu.open(false);
+    });
+  }
+
   start_periodic_updaters() {
     this._updateIconsTimeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
       this.update_icons();
@@ -663,16 +685,7 @@ class MyApplet extends Applet.IconApplet {
 
         const menu_item_reset_icons_list = new PopupMenu.PopupMenuItem(_("Reset icons list"));
         menu_item_reset_icons_list.connect("activate", () => {
-          global.log("Resetting icons list");
-          this._applet_context_menu.close(false);
-          this.icons = {};
-          this.update_icons();
-          this.update_popup_menu();
-          this.refresh_if_hidden();
-          // Wait for external close event to be processed
-          timeout_add_once(10, () => {
-            this._applet_context_menu.open(false);
-          });
+          this.reset_icons();
         });
         this._applet_context_menu.addMenuItem(menu_item_reset_icons_list, 0);
 

@@ -342,6 +342,22 @@ var MyApplet = class extends Applet.IconApplet {
       this.toggle_hiding(true);
     }
   }
+  reset_icons() {
+    this._applet_context_menu.close(false);
+    const iconsBackup = JSON.parse(JSON.stringify(this.icons));
+    this.icons = {};
+    this.update_icons();
+    Object.entries(iconsBackup).forEach(([key, { show }]) => {
+      if (this.icons[key]) {
+        this.icons[key].show = show;
+      }
+    });
+    this.update_popup_menu();
+    this.refresh_if_hidden();
+    timeout_add_once(10, () => {
+      this._applet_context_menu.open(false);
+    });
+  }
   start_periodic_updaters() {
     this._updateIconsTimeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
       this.update_icons();
@@ -523,15 +539,7 @@ var MyApplet = class extends Applet.IconApplet {
         this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem(), 0);
         const menu_item_reset_icons_list = new PopupMenu.PopupMenuItem(_("Reset icons list"));
         menu_item_reset_icons_list.connect("activate", () => {
-          global.log("Resetting icons list");
-          this._applet_context_menu.close(false);
-          this.icons = {};
-          this.update_icons();
-          this.update_popup_menu();
-          this.refresh_if_hidden();
-          timeout_add_once(10, () => {
-            this._applet_context_menu.open(false);
-          });
+          this.reset_icons();
         });
         this._applet_context_menu.addMenuItem(menu_item_reset_icons_list, 0);
         this.menu_item_panel_edit_mode = new PopupMenu.PopupSwitchMenuItem(
