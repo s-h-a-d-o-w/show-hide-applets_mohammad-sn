@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-26 13:01+0000\n"
+"POT-Creation-Date: 2026-07-28 12:52+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -17,20 +17,24 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. applet.js:420
+#. applet.js:441
 msgid "Autohide ON"
 msgstr ""
 
-#. applet.js:421
+#. applet.js:442
 msgid "Autohide OFF"
 msgstr ""
 
-#. applet.js:500
+#. applet.js:524
+msgid "Reset icons list"
+msgstr ""
+
+#. applet.js:538
 msgid "Panel Edit mode"
 msgstr ""
 
 #. settings-schema.json->do_autohide->description
-#. applet.js:508
+#. applet.js:546
 msgid "Autohide"
 msgstr ""
 
@@ -56,7 +60,6 @@ msgid ""
 msgstr ""
 
 #. settings-schema.json->hidetime->units
-#. settings-schema.json->autohiderstime->units
 msgid "seconds"
 msgstr ""
 
@@ -64,16 +67,8 @@ msgstr ""
 msgid "Autohide after "
 msgstr ""
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr ""
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr ""
-
 #. settings-schema.json->hoveractivates->description
-msgid "Activate on hover"
+msgid "Show on hover"
 msgstr ""
 
 #. settings-schema.json->hoveractivates->tooltip
@@ -93,15 +88,11 @@ msgid "miliseconds"
 msgstr ""
 
 #. settings-schema.json->hovertime->description
-msgid "Hover activates/hides after "
+msgid "Hover shows/hides after "
 msgstr ""
 
 #. settings-schema.json->autohiders->description
 msgid "Autohide reshowing applets"
-msgstr ""
-
-#. settings-schema.json->autohiderstime->description
-msgid "Reshowers' autohide delay: "
 msgstr ""
 
 #. settings-schema.json->hideuntilseparator->description
@@ -110,4 +101,8 @@ msgstr ""
 
 #. settings-schema.json->hideuntilseparator->tooltip
 msgid "Only hide everything until the next separator element occurs."
+msgstr ""
+
+#. settings-schema.json->icons->description
+msgid "Internal icons state"
 msgstr ""

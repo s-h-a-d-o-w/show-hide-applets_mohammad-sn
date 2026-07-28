@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: show-hide-applets@mohammad-sn 1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-26 13:01+0000\n"
+"POT-Creation-Date: 2026-07-28 12:52+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: loccun <huynhloc.contact@gmail.com>\n"
 "Language-Team: \n"
@@ -18,20 +18,24 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:420
+#. applet.js:441
 msgid "Autohide ON"
 msgstr "Tự ẩn: Bật"
 
-#. applet.js:421
+#. applet.js:442
 msgid "Autohide OFF"
 msgstr "Tự ẩn: Tắt"
 
-#. applet.js:500
+#. applet.js:524
+msgid "Reset icons list"
+msgstr ""
+
+#. applet.js:538
 msgid "Panel Edit mode"
 msgstr "Chế độ chỉnh sửa bảng"
 
 #. settings-schema.json->do_autohide->description
-#. applet.js:508
+#. applet.js:546
 msgid "Autohide"
 msgstr "Tự động ẩn"
 
@@ -62,7 +66,6 @@ msgstr ""
 "Có thể thay đổi trạng thái bằng cách nhấp chuột giữa vào applet này."
 
 #. settings-schema.json->hidetime->units
-#. settings-schema.json->autohiderstime->units
 msgid "seconds"
 msgstr "giây"
 
@@ -70,16 +73,9 @@ msgstr "giây"
 msgid "Autohide after "
 msgstr "Tự ẩn sau "
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Vô hiệu hóa tự ẩn khi khởi động"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "nếu không ở chế độ tự ẩn"
-
 #. settings-schema.json->hoveractivates->description
-msgid "Activate on hover"
+#, fuzzy
+msgid "Show on hover"
 msgstr "Kích hoạt khi trỏ chuột"
 
 #. settings-schema.json->hoveractivates->tooltip
@@ -99,16 +95,13 @@ msgid "miliseconds"
 msgstr "mili giây"
 
 #. settings-schema.json->hovertime->description
-msgid "Hover activates/hides after "
+#, fuzzy
+msgid "Hover shows/hides after "
 msgstr "Kích hoạt/ẩn khi trỏ chuột sau "
 
 #. settings-schema.json->autohiders->description
 msgid "Autohide reshowing applets"
 msgstr "Tự động ẩn lại applet sau khi hiện"
-
-#. settings-schema.json->autohiderstime->description
-msgid "Reshowers' autohide delay: "
-msgstr "Độ trễ tự ẩn lại sau khi hiện: "
 
 #. settings-schema.json->hideuntilseparator->description
 msgid "Only hide until next separator"
@@ -117,3 +110,7 @@ msgstr "Chỉ ẩn đến dấu phân cách kế tiếp"
 #. settings-schema.json->hideuntilseparator->tooltip
 msgid "Only hide everything until the next separator element occurs."
 msgstr "Chỉ ẩn mọi thứ cho đến khi gặp phần tử phân cách tiếp theo."
+
+#. settings-schema.json->icons->description
+msgid "Internal icons state"
+msgstr ""

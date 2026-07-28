@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-26 13:01+0000\n"
+"POT-Creation-Date: 2026-07-28 12:52+0000\n"
 "PO-Revision-Date: 2025-08-27 19:01+0200\n"
 "Last-Translator: Dragone2 <dragone2@risposteinformatiche.it>\n"
 "Language-Team: \n"
@@ -19,20 +19,24 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:420
+#. applet.js:441
 msgid "Autohide ON"
 msgstr "Auto-nascondimento ON"
 
-#. applet.js:421
+#. applet.js:442
 msgid "Autohide OFF"
 msgstr "Auto-nascondimento OFF"
 
-#. applet.js:500
+#. applet.js:524
+msgid "Reset icons list"
+msgstr ""
+
+#. applet.js:538
 msgid "Panel Edit mode"
 msgstr "Modalità Modifica Pannello"
 
 #. settings-schema.json->do_autohide->description
-#. applet.js:508
+#. applet.js:546
 msgid "Autohide"
 msgstr "Nascondi automaticamente"
 
@@ -64,7 +68,6 @@ msgstr ""
 "applet."
 
 #. settings-schema.json->hidetime->units
-#. settings-schema.json->autohiderstime->units
 msgid "seconds"
 msgstr "secondi"
 
@@ -72,16 +75,9 @@ msgstr "secondi"
 msgid "Autohide after "
 msgstr "Nascondi automaticamente dopo "
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Disabilita nascondimento automatico all'avvio"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "se non in modalità nascondi automaticamente"
-
 #. settings-schema.json->hoveractivates->description
-msgid "Activate on hover"
+#, fuzzy
+msgid "Show on hover"
 msgstr "Attiva al passaggio del mouse"
 
 #. settings-schema.json->hoveractivates->tooltip
@@ -101,16 +97,13 @@ msgid "miliseconds"
 msgstr "millisecondi"
 
 #. settings-schema.json->hovertime->description
-msgid "Hover activates/hides after "
+#, fuzzy
+msgid "Hover shows/hides after "
 msgstr "Al passaggio del mouse si attiva/nasconde dopo "
 
 #. settings-schema.json->autohiders->description
 msgid "Autohide reshowing applets"
 msgstr "Nascondi automaticamente e rivisualizza le applet"
-
-#. settings-schema.json->autohiderstime->description
-msgid "Reshowers' autohide delay: "
-msgstr "Ritardo di riattivazione auto-nascondimento: "
 
 #. settings-schema.json->hideuntilseparator->description
 msgid "Only hide until next separator"
@@ -119,3 +112,7 @@ msgstr "Nascondi solo fino al prossimo separatore"
 #. settings-schema.json->hideuntilseparator->tooltip
 msgid "Only hide everything until the next separator element occurs."
 msgstr "Nasconde tutto fino all'occorrenza del successivo elemento separatore."
+
+#. settings-schema.json->icons->description
+msgid "Internal icons state"
+msgstr ""

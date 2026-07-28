@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-26 13:01+0000\n"
+"POT-Creation-Date: 2026-07-28 12:52+0000\n"
 "PO-Revision-Date: 2026-05-20 17:07+0200\n"
 "Last-Translator: Alan Mortensen <over.tackiness223@passinbox.com>\n"
 "Language-Team: \n"
@@ -19,20 +19,24 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:420
+#. applet.js:441
 msgid "Autohide ON"
 msgstr "Skjul automatisk slået til"
 
-#. applet.js:421
+#. applet.js:442
 msgid "Autohide OFF"
 msgstr "Skjul automatisk slået fra"
 
-#. applet.js:500
+#. applet.js:524
+msgid "Reset icons list"
+msgstr ""
+
+#. applet.js:538
 msgid "Panel Edit mode"
 msgstr "Panelredigeringstilstand"
 
 #. settings-schema.json->do_autohide->description
-#. applet.js:508
+#. applet.js:546
 msgid "Autohide"
 msgstr "Skjul automatisk"
 
@@ -63,7 +67,6 @@ msgstr ""
 "Status kan ændres med midterklik på panelprogrammet."
 
 #. settings-schema.json->hidetime->units
-#. settings-schema.json->autohiderstime->units
 msgid "seconds"
 msgstr "sekunder"
 
@@ -71,16 +74,9 @@ msgstr "sekunder"
 msgid "Autohide after "
 msgstr "Skjul automatisk efter "
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Deaktivér skjul automatisk ved opstart"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "Hvis den ikke er i skjul automatisk-tilstand"
-
 #. settings-schema.json->hoveractivates->description
-msgid "Activate on hover"
+#, fuzzy
+msgid "Show on hover"
 msgstr "Aktivér, når markøren føres hen over"
 
 #. settings-schema.json->hoveractivates->tooltip
@@ -100,16 +96,13 @@ msgid "miliseconds"
 msgstr "millisekunder"
 
 #. settings-schema.json->hovertime->description
-msgid "Hover activates/hides after "
+#, fuzzy
+msgid "Hover shows/hides after "
 msgstr "Svævning viser/skjuler efter "
 
 #. settings-schema.json->autohiders->description
 msgid "Autohide reshowing applets"
 msgstr "Skjul automatisk panelprogrammer, som vises igen"
-
-#. settings-schema.json->autohiderstime->description
-msgid "Reshowers' autohide delay: "
-msgstr "Forsinkelse for automatisk skjul af panelprogrammer, som vises igen: "
 
 #. settings-schema.json->hideuntilseparator->description
 msgid "Only hide until next separator"
@@ -118,3 +111,7 @@ msgstr "Skjul kun indtil næste adskiller"
 #. settings-schema.json->hideuntilseparator->tooltip
 msgid "Only hide everything until the next separator element occurs."
 msgstr "Skjul kun alt indtil næste adskillerelement optræder."
+
+#. settings-schema.json->icons->description
+msgid "Internal icons state"
+msgstr ""

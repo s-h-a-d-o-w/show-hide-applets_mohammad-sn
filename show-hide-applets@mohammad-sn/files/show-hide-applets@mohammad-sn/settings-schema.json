@@ -20,7 +20,7 @@
   "hoveractivates": {
     "type": "checkbox",
     "default": true,
-    "description": "Activate on hover",
+    "description": "Show on hover",
     "tooltip": "show applets on mouse hover"
   },
   "hoveractivateshide": {
@@ -38,7 +38,7 @@
     "step": 5,
     "units": "miliseconds",
     "dependency": "hoveractivates",
-    "description": "Hover activates/hides after ",
+    "description": "Hover shows/hides after ",
     "tooltip": ""
   },
   "autohiders": {

@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-26 13:01+0000\n"
+"POT-Creation-Date: 2026-07-28 12:52+0000\n"
 "PO-Revision-Date: 2017-09-27 17:48+0200\n"
 "Last-Translator: Peter Moser <pitiz29a@gmail.com>\n"
 "Language-Team: \n"
@@ -19,22 +19,26 @@ msgstr ""
 "X-Generator: Poedit 1.8.7.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. applet.js:420
+#. applet.js:441
 #, fuzzy
 msgid "Autohide ON"
 msgstr "Verstecke automatisch"
 
-#. applet.js:421
+#. applet.js:442
 #, fuzzy
 msgid "Autohide OFF"
 msgstr "Verstecke automatisch"
 
-#. applet.js:500
+#. applet.js:524
+msgid "Reset icons list"
+msgstr ""
+
+#. applet.js:538
 msgid "Panel Edit mode"
 msgstr "Leistenbearbeitungsmodus"
 
 #. settings-schema.json->do_autohide->description
-#. applet.js:508
+#. applet.js:546
 msgid "Autohide"
 msgstr "Verstecke automatisch"
 
@@ -66,7 +70,6 @@ msgstr ""
 "ansonsten werden sie nur bei einem Mausklick versteckt."
 
 #. settings-schema.json->hidetime->units
-#. settings-schema.json->autohiderstime->units
 msgid "seconds"
 msgstr "Sekunden"
 
@@ -74,16 +77,9 @@ msgstr "Sekunden"
 msgid "Autohide after "
 msgstr "Verstecke automatisch nach"
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Deaktiviere Verzögerung für das automatische Verstecken"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "Wenn \"Verstecke automatisch\" nicht aktiviert ist."
-
 #. settings-schema.json->hoveractivates->description
-msgid "Activate on hover"
+#, fuzzy
+msgid "Show on hover"
 msgstr "Aktiviere beim Darüberbewegen"
 
 #. settings-schema.json->hoveractivates->tooltip
@@ -103,16 +99,13 @@ msgid "miliseconds"
 msgstr "Millisekunden"
 
 #. settings-schema.json->hovertime->description
-msgid "Hover activates/hides after "
+#, fuzzy
+msgid "Hover shows/hides after "
 msgstr "Aktiviere/Verstecke beim Darüberbewegen nach"
 
 #. settings-schema.json->autohiders->description
 msgid "Autohide reshowing applets"
 msgstr "Verstecke wiederauftauchende Applets automatisch"
-
-#. settings-schema.json->autohiderstime->description
-msgid "Reshowers' autohide delay: "
-msgstr "Verstecke wiederauftauchender Applets nach"
 
 #. settings-schema.json->hideuntilseparator->description
 msgid "Only hide until next separator"
@@ -121,3 +114,7 @@ msgstr "Verstecke nur alles bis zum nächsten Trenner"
 #. settings-schema.json->hideuntilseparator->tooltip
 msgid "Only hide everything until the next separator element occurs."
 msgstr "Verstecke nur alles bis das nächste Trenner-Element vorkommt."
+
+#. settings-schema.json->icons->description
+msgid "Internal icons state"
+msgstr ""

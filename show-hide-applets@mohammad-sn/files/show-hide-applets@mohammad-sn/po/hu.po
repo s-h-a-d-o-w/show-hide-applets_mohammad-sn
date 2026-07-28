@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-26 13:01+0000\n"
+"POT-Creation-Date: 2026-07-28 12:52+0000\n"
 "PO-Revision-Date: 2025-08-06 16:16+0200\n"
 "Last-Translator: Kálmán „KAMI” Szalai <kami911@gmail.com>\n"
 "Language-Team: \n"
@@ -18,20 +18,24 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.4.2\n"
 
-#. applet.js:420
+#. applet.js:441
 msgid "Autohide ON"
 msgstr "Automatikus elrejtés BE"
 
-#. applet.js:421
+#. applet.js:442
 msgid "Autohide OFF"
 msgstr "Automatikus elrejtés KI"
 
-#. applet.js:500
+#. applet.js:524
+msgid "Reset icons list"
+msgstr ""
+
+#. applet.js:538
 msgid "Panel Edit mode"
 msgstr "Panelszerkesztő üzemmód"
 
 #. settings-schema.json->do_autohide->description
-#. applet.js:508
+#. applet.js:546
 msgid "Autohide"
 msgstr "Automatikus elrejtés"
 
@@ -62,7 +66,6 @@ msgstr ""
 "Állapotát ezen kisalkalmazásra való középső kattintással módosíthatja."
 
 #. settings-schema.json->hidetime->units
-#. settings-schema.json->autohiderstime->units
 msgid "seconds"
 msgstr "másodperc"
 
@@ -70,16 +73,9 @@ msgstr "másodperc"
 msgid "Autohide after "
 msgstr "Automatikus elrejtés ennyi idő múlva "
 
-#. settings-schema.json->disablestarttimeautohide->description
-msgid "Disable start time autohide"
-msgstr "Letiltja a kezdési idő automatikus elrejtését"
-
-#. settings-schema.json->disablestarttimeautohide->tooltip
-msgid "if not in autohide mode"
-msgstr "ha nem automatikus elrejtés módban"
-
 #. settings-schema.json->hoveractivates->description
-msgid "Activate on hover"
+#, fuzzy
+msgid "Show on hover"
 msgstr "Aktiválódjon ha az egér rámutat"
 
 #. settings-schema.json->hoveractivates->tooltip
@@ -99,16 +95,13 @@ msgid "miliseconds"
 msgstr "ezredmásodperc"
 
 #. settings-schema.json->hovertime->description
-msgid "Hover activates/hides after "
+#, fuzzy
+msgid "Hover shows/hides after "
 msgstr "Az egér rámutatás aktiválja / elrejti ennyi idő múlva "
 
 #. settings-schema.json->autohiders->description
 msgid "Autohide reshowing applets"
 msgstr "Újra megjelenő kisalkalmazások automatikus elrejtése"
-
-#. settings-schema.json->autohiderstime->description
-msgid "Reshowers' autohide delay: "
-msgstr "Újra megjelenő kisalkalmazások automatikus elrejtésének késleltetése: "
 
 #. settings-schema.json->hideuntilseparator->description
 msgid "Only hide until next separator"
@@ -119,3 +112,7 @@ msgid "Only hide everything until the next separator element occurs."
 msgstr ""
 "Csak addig rejtsen el mindent, amíg a következő elválasztó elem meg nem "
 "jelenik."
+
+#. settings-schema.json->icons->description
+msgid "Internal icons state"
+msgstr ""
