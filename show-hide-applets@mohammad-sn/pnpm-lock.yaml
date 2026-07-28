@@ -210,6 +210,9 @@ importers:
       '@ci-types/cjs':
         specifier: ^6.0.2-5
         version: 6.0.2-5
+      '@s-h-a-d-o-w/oxlint-config':
+        specifier: ^1.1.2
+        version: 1.1.2(oxfmt@0.58.0)(oxlint-tsgolint@0.24.0)(oxlint@1.74.0(oxlint-tsgolint@0.24.0))
       '@types/node':
         specifier: ^24.13.2
         version: 24.13.3
@@ -670,6 +673,13 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@s-h-a-d-o-w/oxlint-config@1.1.2':
+    resolution: {integrity: sha512-9TyWgP9vFY7HZxFVVVEbbvVeEs3x0mjKtep7NW1fPjy6fUJ0RwF+P85GlPfyKb929QC9gZ0nSLhMbP9Y+8KNYA==}
+    peerDependencies:
+      oxfmt: '*'
+      oxlint: '*'
+      oxlint-tsgolint: '*'
+
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
@@ -1080,6 +1090,12 @@ snapshots:
 
   '@oxlint/binding-win32-x64-msvc@1.74.0':
     optional: true
+
+  '@s-h-a-d-o-w/oxlint-config@1.1.2(oxfmt@0.58.0)(oxlint-tsgolint@0.24.0)(oxlint@1.74.0(oxlint-tsgolint@0.24.0))':
+    dependencies:
+      oxfmt: 0.58.0
+      oxlint: 1.74.0(oxlint-tsgolint@0.24.0)
+      oxlint-tsgolint: 0.24.0
 
   '@types/node@24.13.3':
     dependencies:

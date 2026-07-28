@@ -8,10 +8,14 @@
   "scripts": {
     "build": "esbuild --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
     "dev": "esbuild --watch --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "lint": "oxlint",
+    "typecheck": "tsc",
+    "prepare": "cd .. && husky show-hide-applets@mohammad-sn/.husky"
   },
   "devDependencies": {
     "@ci-types/cjs": "^6.0.2-5",
+    "@s-h-a-d-o-w/oxlint-config": "^1.1.2",
     "@types/node": "^24.13.2",
     "esbuild": "^0.28.1",
     "husky": "^9.1.7",

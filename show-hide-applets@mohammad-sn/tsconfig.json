@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "noEmit": true,
+
     // Cinnamon TypeScript declarations
     "types": ["@ci-types/cjs"],
 
