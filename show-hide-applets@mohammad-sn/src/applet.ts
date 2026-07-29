@@ -175,7 +175,6 @@ class MyApplet extends IconApplet {
         "devtest-show-hide-applets@mohammad-sn",
         this.instance_id,
       );
-      this.icons = this.settings.getValue("icons");
 
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
@@ -267,6 +266,9 @@ class MyApplet extends IconApplet {
 
   bind_settings() {
     try {
+      this.settings.bind("autohiders", "autohideReshowing", () => {
+        this.refresh_if_hidden();
+      });
       this.settings.bind("do_autohide", "do_autohide", () => {
         if (this._hideTimeoutId && !this.do_autohide) {
           GLib.source_remove(this._hideTimeoutId);
@@ -285,10 +287,8 @@ class MyApplet extends IconApplet {
       this.settings.bind("hoveractivateshide", "hover_activates_hide");
       this.settings.bind("hidetime", "hide_time");
       this.settings.bind("hovertime", "hover_time");
-      this.settings.bind("autohiders", "autohideReshowing", () => {
-        this.refresh_if_hidden();
-      });
       this.settings.bind("hideuntilseparator", "hide_until_separator");
+      this.settings.bind("icons", "icons");
     } catch (error) {
       global.logError(error);
     }
@@ -682,7 +682,7 @@ class MyApplet extends IconApplet {
       if (applet._uuid === "separator@cinnamon.org") {
         continue;
       } else if (applet._uuid === "xapp-status@cinnamon.org") {
-        // `applet` is a CinnamonXAppStatusApplet:
+        // `applet` is a CinnamonXAppStatusApplet - which is untyped:
         // https://github.com/linuxmint/cinnamon/blob/master/files/usr/share/cinnamon/applets/xapp-status%40cinnamon.org/applet.js#L391C6-L391C32
         Object.values(applet.statusIcons as Record<string, any>).forEach(
           (icon) => {
@@ -713,11 +713,10 @@ class MyApplet extends IconApplet {
       } else if (applet._uuid === "systray@cinnamon.org") {
         // It's typeof St.Bin[], the buttons created here: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/files/usr/share/cinnamon/applets/systray%40cinnamon.org/applet.js#L147
         for (const systrayIcon of childBoxLayout
-          .get_first_child()
+          .get_first_child() // button_box
           .get_children()) {
-          // CinnamonTrayIcon: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/src/cinnamon-tray-icon.c#L20
-          const icon = systrayIcon.get_child();
-          const key = (applet._uuid + icon.title) as string;
+          const icon = systrayIcon.get_child() as imports.gi.Cinnamon.TrayIcon;
+          const key = applet._uuid + icon.title;
           // We have no names/paths of the icons themselves here
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
@@ -756,8 +755,6 @@ class MyApplet extends IconApplet {
     ) {
       this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
     }
-
-    this.settings.setValue("icons", this.icons);
   }
 
   update_our_icon() {

@@ -120,7 +120,6 @@ var MyApplet = class extends IconApplet {
         "devtest-show-hide-applets@mohammad-sn",
         this.instance_id,
       );
-      this.icons = this.settings.getValue("icons");
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
       this.icons_dir = Gio.File.new_for_path(this.applet_path + "/icons");
       global.log(`icons_dir: ${this.icons_dir.get_path()}`);
@@ -196,6 +195,9 @@ var MyApplet = class extends IconApplet {
   }
   bind_settings() {
     try {
+      this.settings.bind("autohiders", "autohideReshowing", () => {
+        this.refresh_if_hidden();
+      });
       this.settings.bind("do_autohide", "do_autohide", () => {
         if (this._hideTimeoutId && !this.do_autohide) {
           GLib.source_remove(this._hideTimeoutId);
@@ -212,10 +214,8 @@ var MyApplet = class extends IconApplet {
       this.settings.bind("hoveractivateshide", "hover_activates_hide");
       this.settings.bind("hidetime", "hide_time");
       this.settings.bind("hovertime", "hover_time");
-      this.settings.bind("autohiders", "autohideReshowing", () => {
-        this.refresh_if_hidden();
-      });
       this.settings.bind("hideuntilseparator", "hide_until_separator");
+      this.settings.bind("icons", "icons");
     } catch (error) {
       global.logError(error);
     }
@@ -590,7 +590,6 @@ var MyApplet = class extends IconApplet {
     ) {
       this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
     }
-    this.settings.setValue("icons", this.icons);
   }
   update_our_icon() {
     if (this.do_hide) {
