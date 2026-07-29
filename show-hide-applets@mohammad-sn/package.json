@@ -1,13 +1,12 @@
 {
   "name": "show-hide-applets@mohammad-sn",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
-  "keywords": [],
-  "author": "",
+  "author": "Andreas Opferkuch <andreas.opferkuch@gmail.com>",
   "type": "module",
   "scripts": {
-    "build": "esbuild --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
-    "dev": "esbuild --watch --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/applet.js --platform=neutral --format=cjs",
+    "build": "esbuild --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/6.6/applet.js --platform=neutral --format=cjs",
+    "dev": "esbuild --watch --bundle src/applet.ts --outfile=files/show-hide-applets@mohammad-sn/6.6/applet.js --platform=neutral --format=cjs",
     "format": "oxfmt",
     "lint": "oxlint",
     "typecheck": "tsc",

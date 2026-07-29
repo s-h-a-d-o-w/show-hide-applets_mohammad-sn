@@ -4,7 +4,7 @@ By default, Cinnamon tends to add it on the very left of the right zone, so **it
 
 ### Specific contributions wanted
 
-- Somehow getting nicer names for icons would be great, particuarly for apps like Deezer that somehow don't provide anything readable to the Xapp Status Applet. The associated process name would probably be best.
+1. Somehow getting nicer names for icons would be great, particuarly for apps like Deezer that somehow don't provide anything readable to the Xapp Status Applet. The associated process name would probably be best.
 
 ### Thanks to
 
