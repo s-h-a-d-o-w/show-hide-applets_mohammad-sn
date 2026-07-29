@@ -16,7 +16,7 @@ const {
       PopupSwitchMenuItem,
       PopupSwitchIconMenuItem,
     },
-    settings: { AppletSettings, BindingDirection },
+    settings: { AppletSettings },
   },
 } = imports;
 type StatusIconInterfaceProxy = imports.gi.XApp.StatusIconInterfaceProxy;
@@ -267,58 +267,28 @@ class MyApplet extends IconApplet {
 
   bind_settings() {
     try {
-      this.settings.bindProperty(
-        BindingDirection.BIDIRECTIONAL,
-        "do_autohide",
-        "do_autohide",
-        () => {
-          if (this._hideTimeoutId && !this.do_autohide) {
-            GLib.source_remove(this._hideTimeoutId);
-            this._hideTimeoutId = null;
-          } else if (this.do_autohide && this.do_hide) {
-            this.auto_hide();
-          }
+      this.settings.bind("do_autohide", "do_autohide", () => {
+        if (this._hideTimeoutId && !this.do_autohide) {
+          GLib.source_remove(this._hideTimeoutId);
+          this._hideTimeoutId = null;
+        } else if (this.do_autohide && this.do_hide) {
+          this.auto_hide();
+        }
 
-          if (this.menu_item_auto_hide) {
-            this.menu_item_auto_hide["_switch"].setToggleState(
-              this.do_autohide,
-            );
-          }
+        if (this.menu_item_auto_hide) {
+          this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
+        }
 
-          this.update_autohide_tooltip();
-        },
-        null,
-      );
-      this.settings.bindProperty(
-        BindingDirection.IN,
-        "hoveractivates",
-        "hover_activates",
-      );
-      this.settings.bindProperty(
-        BindingDirection.IN,
-        "hoveractivateshide",
-        "hover_activates_hide",
-      );
-      this.settings.bindProperty(BindingDirection.IN, "hidetime", "hide_time");
-      this.settings.bindProperty(
-        BindingDirection.IN,
-        "hovertime",
-        "hover_time",
-      );
-      this.settings.bindProperty(
-        BindingDirection.IN,
-        "autohiders",
-        "autohideReshowing",
-        () => {
-          this.refresh_if_hidden();
-        },
-        null,
-      );
-      this.settings.bindProperty(
-        BindingDirection.IN,
-        "hideuntilseparator",
-        "hide_until_separator",
-      );
+        this.update_autohide_tooltip();
+      });
+      this.settings.bind("hoveractivates", "hover_activates");
+      this.settings.bind("hoveractivateshide", "hover_activates_hide");
+      this.settings.bind("hidetime", "hide_time");
+      this.settings.bind("hovertime", "hover_time");
+      this.settings.bind("autohiders", "autohideReshowing", () => {
+        this.refresh_if_hidden();
+      });
+      this.settings.bind("hideuntilseparator", "hide_until_separator");
     } catch (error) {
       global.logError(error);
     }
