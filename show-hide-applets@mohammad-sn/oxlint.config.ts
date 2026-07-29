@@ -13,6 +13,9 @@ export default defineConfig({
     "typescript/no-deprecated": "off",
     "typescript/no-explicit-any": "off",
 
+    // Mock files legitimately declare several small stub classes.
+    "max-classes-per-file": "off",
+
     // Caused by `any` - which we need because there aren't types for everything and I (mostly) didn't want to create partial, speculative types based on debug info at runtime.
     "typescript/no-unsafe-argument": "off",
     "typescript/no-unsafe-assignment": "off",

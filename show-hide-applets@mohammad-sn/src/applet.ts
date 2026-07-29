@@ -1,14 +1,9 @@
 import { timeout_add_once, timeout_add_seconds_once } from "./timeout";
+import { IconConfig } from "./icon_config";
 
 const {
   gettext,
-  gi: {
-    Gtk,
-    St,
-    GLib,
-    Gio,
-    GdkPixbuf: { Pixbuf },
-  },
+  gi: { St, GLib },
   ui: {
     applet: { IconApplet },
     popupMenu: {
@@ -16,7 +11,6 @@ const {
       PopupSeparatorMenuItem,
       PopupMenuItem,
       PopupSwitchMenuItem,
-      PopupSwitchIconMenuItem,
     },
     settings: { AppletSettings },
   },
@@ -25,23 +19,7 @@ const {
 const UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
 
-// `applet._meta` example:
-// {"uuid":"network@cinnamon.org","name":"Network Manager","description":"Network manager applet","icon":"cs-network","state":1,"path":"/usr/share/cinnamon/applets/network@cinnamon.org","error":"","force_loaded":false}
-type AppletMeta = {
-  uuid: string;
-  name: string;
-  description: string;
-  icon: string;
-  state: number;
-  path: string;
-  error: string;
-  force_loaded: boolean;
-};
 type Side = imports.gi.St.Side;
-type StatusIconInterfaceProxy = imports.gi.XApp.StatusIconInterfaceProxy;
-
-// 7 days, since some apps use multiple distinct icons but only one at the time. It's not possible to identify correlated icons by app name (multiple apps can have the same name), so users unfortunately sometimes have to toggle different icon states "on" if that is an app that they always want to see.
-const ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 function _(str: string): string {
   return gettext.dgettext(UUID, str);
@@ -92,18 +70,7 @@ class MyApplet extends IconApplet {
   last_toggle_hiding_end!: number;
   last_toggle_hiding_start!: number;
   loaded_panel!: imports.ui.panel.Panel;
-  icons_dir!: imports.gi.Gio.File;
-  icons: Record<
-    string,
-    {
-      ownerUuid: string;
-      name: string;
-      last_seen: number;
-      show: boolean;
-
-      icon_name?: string;
-    }
-  > = {};
+  icon_config!: IconConfig;
   orientation: Side;
   settings!: imports.ui.settings.AppletSettings;
 
@@ -143,14 +110,10 @@ class MyApplet extends IconApplet {
     try {
       this.bind_settings();
 
-      Gtk.IconTheme.get_default().append_search_path(metadata.path);
-      this.icons_dir = Gio.File.new_for_path(metadata.path + "/icons");
-      global.log(`icons_dir: ${this.icons_dir.get_path()}`);
-      if (!this.icons_dir.query_exists(null)) {
-        this.icons_dir.make_directory_with_parents(null);
-      }
-      Gtk.IconTheme.get_default().append_search_path(
-        this.icons_dir.get_path()!,
+      this.icon_config = new IconConfig(
+        metadata.path,
+        this.settings.getValue("icons"),
+        (icons) => this.settings.setValue("icons", icons),
       );
 
       this.loaded_panel = this.panel!;
@@ -172,7 +135,7 @@ class MyApplet extends IconApplet {
 
       // Initial populate + start periodic updaters
       timeout_add_seconds_once(1, () => {
-        this.update_icons();
+        this.icon_config.update(this.get_eligible_children());
         this.update_popup_menu();
         this.start_periodic_updaters();
       });
@@ -260,49 +223,8 @@ class MyApplet extends IconApplet {
       this.settings.bind("hidetime", "hide_time");
       this.settings.bind("hovertime", "hover_time");
       this.settings.bind("hideuntilseparator", "hide_until_separator");
-
-      this.icons = this.settings.getValue("icons");
     } catch (error) {
       global.logError(error);
-    }
-  }
-
-  ensure_local_icon(icon_name: string) {
-    if (!icon_name.includes("/")) {
-      return icon_name;
-    }
-
-    try {
-      const is_ico = icon_name.endsWith(".ico");
-      const dest_name = is_ico
-        ? icon_name.replaceAll("/", "@").replace(".ico", ".png")
-        : icon_name.replaceAll("/", "@");
-      const dest_file = this.icons_dir.get_child(dest_name);
-
-      if (!dest_file.query_exists(null)) {
-        const source_file = Gio.File.new_for_path(icon_name);
-        if (!source_file.query_exists(null)) {
-          return undefined;
-        }
-
-        if (is_ico) {
-          const pixbuf = Pixbuf.new_from_file(icon_name);
-          pixbuf!.savev(
-            dest_file.get_path()!.replace(/\.ico$/u, ".png"),
-            "png",
-            null,
-            null,
-          );
-        } else {
-          source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
-        }
-      }
-
-      // Get rid of the extension
-      return dest_name.replace(/\.[^.]+$/u, "");
-    } catch (error) {
-      global.logError(error);
-      return undefined;
     }
   }
 
@@ -324,6 +246,13 @@ class MyApplet extends IconApplet {
       }
     } else {
       for (let i = 0; i < our_index; i++) {
+        if (
+          this.hide_until_separator &&
+          children[i]._applet._uuid === "separator@cinnamon.org"
+        ) {
+          break;
+        }
+
         eligible.push(children[i]);
       }
     }
@@ -467,18 +396,7 @@ class MyApplet extends IconApplet {
   reset_icons() {
     this._applet_context_menu.close(false);
 
-    const iconsBackup = JSON.parse(
-      JSON.stringify(this.icons),
-    ) as typeof this.icons;
-    this.icons = {};
-    this.update_icons();
-    // Restore `show` status
-    Object.entries(iconsBackup).forEach(([key, { show }]) => {
-      if (this.icons[key]) {
-        this.icons[key].show = show;
-      }
-    });
-
+    this.icon_config.reset(this.get_eligible_children());
     this.update_popup_menu();
 
     // Wait for external close event to be processed before opening the menu again
@@ -492,7 +410,7 @@ class MyApplet extends IconApplet {
       GLib.PRIORITY_DEFAULT,
       30,
       () => {
-        this.update_icons();
+        this.icon_config.update(this.get_eligible_children());
         return GLib.SOURCE_CONTINUE;
       },
     );
@@ -522,106 +440,28 @@ class MyApplet extends IconApplet {
       }
 
       for (const child of this.get_eligible_children()) {
-        const applet = child._applet;
-
-        if (this.do_hide) {
-          if (
-            this.hide_until_separator &&
-            applet._uuid === "separator@cinnamon.org"
-          ) {
-            break;
-          }
-
-          if (applet._uuid === "systray@cinnamon.org") {
-            for (const systray_child of child
-              .get_first_child()
-              .get_children()) {
-              const icon = systray_child.get_child();
-
-              if (!systray_child.visible && !refreshing) {
-                this.already_hidden.push(systray_child);
-              }
-
-              const key = (applet._uuid + icon.title) as string;
-              if (this.icons[key]?.show) {
-                continue;
-              }
-
-              systray_child.hide();
-            }
-            continue;
-          }
-
-          if (applet._uuid === "xapp-status@cinnamon.org") {
-            for (const xapp_child of Object.values(
-              applet.statusIcons as Record<string, any>,
-            )) {
-              const { name, icon_name, visible } =
-                xapp_child.proxy as StatusIconInterfaceProxy;
-
-              if (!visible && !refreshing) {
-                this.already_hidden.push(xapp_child);
-              }
-
-              const key = applet._uuid + name + icon_name;
-              if (this.icons[key]?.show) {
-                continue;
-              }
-
-              xapp_child.actor.hide();
-            }
-            continue;
-          }
-
-          // Keep track of applets (not necessarily individual icons) that were already hidden, not by us.
-          if (!child.visible && !refreshing) {
-            this.already_hidden.push(child);
-          }
-
-          const { uuid, name, icon } = applet._meta as AppletMeta;
-          const key = uuid + name + icon;
-          if (this.icons[key]?.show) {
-            continue;
-          }
-          child.hide();
-        } else {
-          // Don't show icons that were already hidden by external code.
-          // This also covers the case where one of them switches visibility and triggers an allocation_changed event => if it was known as previously hidden, we don't hide it. Which is generally what you want with icons that switch between hidden and visible by themselves.
-          if (!this.already_hidden.includes(child)) {
-            child.show();
-          }
-
-          if (applet._uuid === "systray@cinnamon.org") {
-            try {
-              for (const systray_child of child
-                .get_first_child()
-                .get_children()) {
-                if (!this.already_hidden.includes(systray_child)) {
-                  systray_child.show();
+        this.icon_config
+          .extract_icon_infos(child)
+          .forEach(
+            ({ owner_uuid, name, icon_name, visible, hideable_object }) => {
+              if (this.do_hide) {
+                if (!visible && !refreshing) {
+                  this.already_hidden.push(hideable_object);
+                  return;
                 }
-              }
-            } catch (error) {
-              global.logError(error);
-            }
-          }
 
-          if (applet._uuid === "xapp-status@cinnamon.org") {
-            for (const xapp_child of Object.values(
-              applet.statusIcons as Record<string, any>,
-            )) {
-              const { name, icon_name } =
-                xapp_child.proxy as StatusIconInterfaceProxy;
-              if (
-                name.trim() !== "" &&
-                icon_name.trim() !== "" &&
-                !this.already_hidden.includes(xapp_child)
-              ) {
-                xapp_child.actor.show();
+                const key = owner_uuid + name + (icon_name ?? "");
+                if (!this.icon_config.icons[key]?.show) {
+                  hideable_object.hide();
+                }
+              } else if (!this.already_hidden.includes(hideable_object)) {
+                hideable_object.show();
               }
-            }
-          }
-        }
+            },
+          );
       }
+
+      // global.log("already_hidden: " + this.already_hidden.length);
 
       if (
         !this.do_hide &&
@@ -648,89 +488,6 @@ class MyApplet extends IconApplet {
     } else {
       this.set_applet_tooltip(_("Autohide OFF"));
     }
-  }
-
-  update_icons() {
-    for (const child_box_layout of this.get_eligible_children()) {
-      const applet = child_box_layout._applet;
-      if (applet._uuid === "separator@cinnamon.org") {
-        continue;
-      } else if (applet._uuid === "xapp-status@cinnamon.org") {
-        // `applet` is a CinnamonXAppStatusApplet - which is untyped:
-        // https://github.com/linuxmint/cinnamon/blob/master/files/usr/share/cinnamon/applets/xapp-status%40cinnamon.org/applet.js#L391C6-L391C32
-        Object.values(applet.statusIcons as Record<string, any>).forEach(
-          (icon) => {
-            // `icon` is a XAppStatusIcon, NOT imports.gi.XApp.StatusIcon
-            // https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/files/usr/share/cinnamon/applets/xapp-status%40cinnamon.org/applet.js#L106
-            // Object.keys(icon):
-            // name, applet, proxy, iconName, actor, icon_holder, iconSize, label, _tooltip, _proxy_prop_change_id, show_label
-            const { name, icon_name } = icon.proxy as StatusIconInterfaceProxy;
-
-            // xapp-status@cinnamon.org only renders proxies that have a name AND icon_name! (But icon_name seems to be a space when it's "empty".)
-            if (name.trim() === "" || icon_name.trim() === "") {
-              return;
-            }
-
-            const key = applet._uuid + name + icon_name;
-            this.icons[key] ??= {
-              ownerUuid: applet._uuid,
-              name,
-              icon_name: icon_name
-                ? this.ensure_local_icon(icon_name)
-                : undefined,
-              last_seen: Date.now(),
-              show: false,
-            };
-            this.icons[key].last_seen = Date.now();
-          },
-        );
-      } else if (applet._uuid === "systray@cinnamon.org") {
-        // It's typeof St.Bin[], the buttons created here: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/files/usr/share/cinnamon/applets/systray%40cinnamon.org/applet.js#L147
-        for (const systrayIcon of child_box_layout
-          .get_first_child() // button_box
-          .get_children()) {
-          const icon = systrayIcon.get_child() as imports.gi.Cinnamon.TrayIcon;
-          const key = applet._uuid + icon.title;
-          // We have no names/paths of the icons themselves here
-          this.icons[key] ??= {
-            ownerUuid: applet._uuid,
-            name: icon.title,
-            last_seen: Date.now(),
-            show: false,
-          };
-          this.icons[key].last_seen = Date.now();
-        }
-      } else {
-        const { uuid, name, icon } = applet._meta as AppletMeta;
-        const key: string = uuid + name + icon;
-        this.icons[key] ??= {
-          ownerUuid: uuid,
-          name,
-          icon_name: icon,
-          last_seen: Date.now(),
-          show: false,
-        };
-        this.icons[key].last_seen = Date.now();
-      }
-    }
-
-    Object.entries(this.icons).forEach(([key, icon]) => {
-      if (Date.now() - icon.last_seen > ICON_SWITCH_STORE_DURATION) {
-        // oxlint-disable-next-line typescript/no-dynamic-delete
-        delete this.icons[key];
-      }
-    });
-
-    // Make sure xapp-status@cinnamon.org icons are at the bottom of the list.
-    const iconValues = Object.values(this.icons);
-    if (
-      iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" &&
-      iconValues.at(-1)?.ownerUuid !== "xapp-status@cinnamon.org"
-    ) {
-      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
-    }
-
-    this.settings.setValue("icons", this.icons);
   }
 
   update_our_icon() {
@@ -792,31 +549,17 @@ class MyApplet extends IconApplet {
       }
 
       this.menu_items_icon_section.removeAll();
-      Object.values(this.icons).forEach((icon) => {
-        const { name, show, icon_name } = icon;
-        const iconToggle = icon_name
-          ? new PopupSwitchIconMenuItem(
-              name,
-              show,
-              icon_name,
-              icon_name.includes("/")
-                ? St.IconType.FULLCOLOR
-                : St.IconType.SYMBOLIC,
-            )
-          : new PopupSwitchMenuItem(name, show);
-        // @ts-expect-error types are wrong
-        iconToggle.connect("toggled", () => {
-          icon.show = !icon.show;
-          this.settings.setValue("icons", this.icons);
-
+      this.icon_config
+        .create_menu_items(() => {
           // Change both show AND hide statuses if currently hidden
           if (!this.do_hide) {
             this.toggle_hiding();
             this.toggle_hiding();
           }
+        })
+        .forEach((icon_toggle) => {
+          this.menu_items_icon_section!.addMenuItem(icon_toggle);
         });
-        this.menu_items_icon_section!.addMenuItem(iconToggle);
-      });
     }
   }
 }

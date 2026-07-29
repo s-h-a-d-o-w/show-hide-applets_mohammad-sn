@@ -45,31 +45,193 @@ function timeout_add_seconds_once(interval, callback) {
   });
 }
 
-// src/applet.ts
+// src/icon_config.ts
 var {
-  gettext,
   gi: {
-    Gtk,
     St,
-    GLib: GLib2,
+    Gtk,
     Gio,
     GdkPixbuf: { Pixbuf },
   },
+  ui: {
+    popupMenu: { PopupSwitchMenuItem, PopupSwitchIconMenuItem },
+  },
+} = imports;
+var ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1e3;
+var IconConfig = class {
+  icons;
+  icons_dir;
+  persist;
+  constructor(metadata_path, initial_value, persist) {
+    this.icons = initial_value ?? {};
+    this.persist = persist;
+    Gtk.IconTheme.get_default().append_search_path(metadata_path);
+    this.icons_dir = Gio.File.new_for_path(metadata_path + "/icons");
+    if (!this.icons_dir.query_exists(null)) {
+      this.icons_dir.make_directory_with_parents(null);
+    }
+    Gtk.IconTheme.get_default().append_search_path(this.icons_dir.get_path());
+  }
+  ensure_local_icon(icon_name) {
+    if (!icon_name.includes("/")) {
+      return icon_name;
+    }
+    try {
+      const is_ico = icon_name.endsWith(".ico");
+      const dest_name = is_ico
+        ? icon_name.replaceAll("/", "@").replace(".ico", ".png")
+        : icon_name.replaceAll("/", "@");
+      const dest_file = this.icons_dir.get_child(dest_name);
+      if (!dest_file.query_exists(null)) {
+        const source_file = Gio.File.new_for_path(icon_name);
+        if (!source_file.query_exists(null)) {
+          return void 0;
+        }
+        if (is_ico) {
+          const pixbuf = Pixbuf.new_from_file(icon_name);
+          pixbuf.savev(
+            dest_file.get_path().replace(/\.ico$/u, ".png"),
+            "png",
+            null,
+            null,
+          );
+        } else {
+          source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
+        }
+      }
+      return dest_name.replace(/\.[^.]+$/u, "");
+    } catch (error) {
+      global.logError(error);
+      return void 0;
+    }
+  }
+  extract_icon_infos(child) {
+    const applet = child._applet;
+    if (applet._uuid === "xapp-status@cinnamon.org") {
+      return Object.values(applet.statusIcons)
+        .map((icon2) => {
+          const { name: name2, icon_name, visible } = icon2.proxy;
+          if (name2.trim() === "" || icon_name.trim() === "") {
+            return void 0;
+          }
+          return {
+            owner_uuid: applet._uuid,
+            name: name2.startsWith(":") ? "<no name>" : name2,
+            icon_name: this.ensure_local_icon(icon_name),
+            visible,
+            hideable_object: icon2.actor,
+          };
+        })
+        .filter((icon2) => icon2 !== void 0);
+    } else if (applet._uuid === "systray@cinnamon.org") {
+      return child
+        .get_first_child()
+        .get_children()
+        .map((systray_icon) => {
+          const { title, visible } = systray_icon.get_child();
+          return {
+            owner_uuid: applet._uuid,
+            name: title,
+            visible,
+            hideable_object: systray_icon,
+          };
+        });
+    }
+    const { uuid, name, icon } = applet._meta;
+    return [
+      {
+        owner_uuid: uuid,
+        name,
+        icon_name: icon,
+        visible: child.visible,
+        hideable_object: child,
+      },
+    ];
+  }
+  // Collects/refreshes the icon state from the given panel zone children,
+  // prunes stale entries, keeps xapp-status icons at the bottom and persists.
+  update(eligible_children) {
+    for (const child of eligible_children) {
+      this.extract_icon_infos(child).forEach(
+        ({ owner_uuid, name, icon_name }) => {
+          const key = owner_uuid + name + (icon_name ?? "");
+          this.icons[key] ??= {
+            owner_uuid,
+            name,
+            last_seen: Date.now(),
+            show: false,
+            icon_name,
+          };
+          this.icons[key].last_seen = Date.now();
+        },
+      );
+    }
+    Object.entries(this.icons).forEach(([key, icon]) => {
+      if (Date.now() - icon.last_seen > ICON_SWITCH_STORE_DURATION) {
+        delete this.icons[key];
+      }
+    });
+    const iconValues = Object.values(this.icons);
+    if (
+      iconValues[0]?.owner_uuid === "xapp-status@cinnamon.org" &&
+      iconValues.at(-1)?.owner_uuid !== "xapp-status@cinnamon.org"
+    ) {
+      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
+    }
+    this.persist(this.icons);
+  }
+  // Rebuilds the icon list from scratch while preserving each icon's `show` state.
+  reset(eligible_children) {
+    const iconsBackup = JSON.parse(JSON.stringify(this.icons));
+    this.icons = {};
+    this.update(eligible_children);
+    Object.entries(iconsBackup).forEach(([key, { show }]) => {
+      if (this.icons[key]) {
+        this.icons[key].show = show;
+      }
+    });
+  }
+  // Builds a switch menu item for each stored icon. `on_toggle` applies to each individual toggle.
+  create_menu_items(on_toggle) {
+    return Object.values(this.icons).map((icon) => {
+      const { name, show, icon_name } = icon;
+      const iconToggle = icon_name
+        ? new PopupSwitchIconMenuItem(
+            name,
+            show,
+            icon_name,
+            icon_name.includes("/")
+              ? St.IconType.FULLCOLOR
+              : St.IconType.SYMBOLIC,
+          )
+        : new PopupSwitchMenuItem(name, show);
+      iconToggle.connect("toggled", () => {
+        icon.show = !icon.show;
+        this.persist(this.icons);
+        on_toggle();
+      });
+      return iconToggle;
+    });
+  }
+};
+
+// src/applet.ts
+var {
+  gettext,
+  gi: { St: St2, GLib: GLib2 },
   ui: {
     applet: { IconApplet },
     popupMenu: {
       PopupMenuSection,
       PopupSeparatorMenuItem,
       PopupMenuItem,
-      PopupSwitchMenuItem,
-      PopupSwitchIconMenuItem,
+      PopupSwitchMenuItem: PopupSwitchMenuItem2,
     },
     settings: { AppletSettings },
   },
 } = imports;
 var UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib2.get_home_dir() + "/.local/share/locale");
-var ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1e3;
 function _(str) {
   return gettext.dgettext(UUID, str);
 }
@@ -88,8 +250,7 @@ var MyApplet = class extends IconApplet {
   last_toggle_hiding_end;
   last_toggle_hiding_start;
   loaded_panel;
-  icons_dir;
-  icons = {};
+  icon_config;
   orientation;
   settings;
   // Menu items
@@ -117,13 +278,11 @@ var MyApplet = class extends IconApplet {
     this.already_hidden = [];
     try {
       this.bind_settings();
-      Gtk.IconTheme.get_default().append_search_path(metadata.path);
-      this.icons_dir = Gio.File.new_for_path(metadata.path + "/icons");
-      global.log(`icons_dir: ${this.icons_dir.get_path()}`);
-      if (!this.icons_dir.query_exists(null)) {
-        this.icons_dir.make_directory_with_parents(null);
-      }
-      Gtk.IconTheme.get_default().append_search_path(this.icons_dir.get_path());
+      this.icon_config = new IconConfig(
+        metadata.path,
+        this.settings.getValue("icons"),
+        (icons) => this.settings.setValue("icons", icons),
+      );
       this.loaded_panel = this.panel;
       this.update_our_icon();
       this.update_autohide_tooltip();
@@ -138,7 +297,7 @@ var MyApplet = class extends IconApplet {
         () => this.on_entered(),
       );
       timeout_add_seconds_once(1, () => {
-        this.update_icons();
+        this.icon_config.update(this.get_eligible_children());
         this.update_popup_menu();
         this.start_periodic_updaters();
       });
@@ -216,42 +375,8 @@ var MyApplet = class extends IconApplet {
       this.settings.bind("hidetime", "hide_time");
       this.settings.bind("hovertime", "hover_time");
       this.settings.bind("hideuntilseparator", "hide_until_separator");
-      this.icons = this.settings.getValue("icons");
     } catch (error) {
       global.logError(error);
-    }
-  }
-  ensure_local_icon(icon_name) {
-    if (!icon_name.includes("/")) {
-      return icon_name;
-    }
-    try {
-      const is_ico = icon_name.endsWith(".ico");
-      const dest_name = is_ico
-        ? icon_name.replaceAll("/", "@").replace(".ico", ".png")
-        : icon_name.replaceAll("/", "@");
-      const dest_file = this.icons_dir.get_child(dest_name);
-      if (!dest_file.query_exists(null)) {
-        const source_file = Gio.File.new_for_path(icon_name);
-        if (!source_file.query_exists(null)) {
-          return void 0;
-        }
-        if (is_ico) {
-          const pixbuf = Pixbuf.new_from_file(icon_name);
-          pixbuf.savev(
-            dest_file.get_path().replace(/\.ico$/u, ".png"),
-            "png",
-            null,
-            null,
-          );
-        } else {
-          source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
-        }
-      }
-      return dest_name.replace(/\.[^.]+$/u, "");
-    } catch (error) {
-      global.logError(error);
-      return void 0;
     }
   }
   get_eligible_children() {
@@ -270,6 +395,12 @@ var MyApplet = class extends IconApplet {
       }
     } else {
       for (let i = 0; i < our_index; i++) {
+        if (
+          this.hide_until_separator &&
+          children[i]._applet._uuid === "separator@cinnamon.org"
+        ) {
+          break;
+        }
         eligible.push(children[i]);
       }
     }
@@ -295,7 +426,7 @@ var MyApplet = class extends IconApplet {
   }
   is_vertical() {
     return (
-      this.orientation === St.Side.LEFT || this.orientation === St.Side.RIGHT
+      this.orientation === St2.Side.LEFT || this.orientation === St2.Side.RIGHT
     );
   }
   // This is mostly about the xapps icon tray regularly "showing" its icons.
@@ -387,14 +518,7 @@ var MyApplet = class extends IconApplet {
   }
   reset_icons() {
     this._applet_context_menu.close(false);
-    const iconsBackup = JSON.parse(JSON.stringify(this.icons));
-    this.icons = {};
-    this.update_icons();
-    Object.entries(iconsBackup).forEach(([key, { show }]) => {
-      if (this.icons[key]) {
-        this.icons[key].show = show;
-      }
-    });
+    this.icon_config.reset(this.get_eligible_children());
     this.update_popup_menu();
     timeout_add_once(10, () => {
       this._applet_context_menu.open(false);
@@ -405,7 +529,7 @@ var MyApplet = class extends IconApplet {
       GLib2.PRIORITY_DEFAULT,
       30,
       () => {
-        this.update_icons();
+        this.icon_config.update(this.get_eligible_children());
         return GLib2.SOURCE_CONTINUE;
       },
     );
@@ -430,83 +554,24 @@ var MyApplet = class extends IconApplet {
         this.already_hidden = [];
       }
       for (const child of this.get_eligible_children()) {
-        const applet = child._applet;
-        if (this.do_hide) {
-          if (
-            this.hide_until_separator &&
-            applet._uuid === "separator@cinnamon.org"
-          ) {
-            break;
-          }
-          if (applet._uuid === "systray@cinnamon.org") {
-            for (const systray_child of child
-              .get_first_child()
-              .get_children()) {
-              const icon2 = systray_child.get_child();
-              if (!systray_child.visible && !refreshing) {
-                this.already_hidden.push(systray_child);
-              }
-              const key2 = applet._uuid + icon2.title;
-              if (this.icons[key2]?.show) {
-                continue;
-              }
-              systray_child.hide();
-            }
-            continue;
-          }
-          if (applet._uuid === "xapp-status@cinnamon.org") {
-            for (const xapp_child of Object.values(applet.statusIcons)) {
-              const { name: name2, icon_name, visible } = xapp_child.proxy;
-              if (!visible && !refreshing) {
-                this.already_hidden.push(xapp_child);
-              }
-              const key2 = applet._uuid + name2 + icon_name;
-              if (this.icons[key2]?.show) {
-                continue;
-              }
-              xapp_child.actor.hide();
-            }
-            continue;
-          }
-          if (!child.visible && !refreshing) {
-            this.already_hidden.push(child);
-          }
-          const { uuid, name, icon } = applet._meta;
-          const key = uuid + name + icon;
-          if (this.icons[key]?.show) {
-            continue;
-          }
-          child.hide();
-        } else {
-          if (!this.already_hidden.includes(child)) {
-            child.show();
-          }
-          if (applet._uuid === "systray@cinnamon.org") {
-            try {
-              for (const systray_child of child
-                .get_first_child()
-                .get_children()) {
-                if (!this.already_hidden.includes(systray_child)) {
-                  systray_child.show();
+        this.icon_config
+          .extract_icon_infos(child)
+          .forEach(
+            ({ owner_uuid, name, icon_name, visible, hideable_object }) => {
+              if (this.do_hide) {
+                if (!visible && !refreshing) {
+                  this.already_hidden.push(hideable_object);
+                  return;
                 }
+                const key = owner_uuid + name + (icon_name ?? "");
+                if (!this.icon_config.icons[key]?.show) {
+                  hideable_object.hide();
+                }
+              } else if (!this.already_hidden.includes(hideable_object)) {
+                hideable_object.show();
               }
-            } catch (error) {
-              global.logError(error);
-            }
-          }
-          if (applet._uuid === "xapp-status@cinnamon.org") {
-            for (const xapp_child of Object.values(applet.statusIcons)) {
-              const { name, icon_name } = xapp_child.proxy;
-              if (
-                name.trim() !== "" &&
-                icon_name.trim() !== "" &&
-                !this.already_hidden.includes(xapp_child)
-              ) {
-                xapp_child.actor.show();
-              }
-            }
-          }
-        }
+            },
+          );
       }
       if (
         !this.do_hide &&
@@ -531,68 +596,6 @@ var MyApplet = class extends IconApplet {
     } else {
       this.set_applet_tooltip(_("Autohide OFF"));
     }
-  }
-  update_icons() {
-    for (const child_box_layout of this.get_eligible_children()) {
-      const applet = child_box_layout._applet;
-      if (applet._uuid === "separator@cinnamon.org") {
-        continue;
-      } else if (applet._uuid === "xapp-status@cinnamon.org") {
-        Object.values(applet.statusIcons).forEach((icon) => {
-          const { name, icon_name } = icon.proxy;
-          if (name.trim() === "" || icon_name.trim() === "") {
-            return;
-          }
-          const key = applet._uuid + name + icon_name;
-          this.icons[key] ??= {
-            ownerUuid: applet._uuid,
-            name,
-            icon_name: icon_name ? this.ensure_local_icon(icon_name) : void 0,
-            last_seen: Date.now(),
-            show: false,
-          };
-          this.icons[key].last_seen = Date.now();
-        });
-      } else if (applet._uuid === "systray@cinnamon.org") {
-        for (const systrayIcon of child_box_layout
-          .get_first_child()
-          .get_children()) {
-          const icon = systrayIcon.get_child();
-          const key = applet._uuid + icon.title;
-          this.icons[key] ??= {
-            ownerUuid: applet._uuid,
-            name: icon.title,
-            last_seen: Date.now(),
-            show: false,
-          };
-          this.icons[key].last_seen = Date.now();
-        }
-      } else {
-        const { uuid, name, icon } = applet._meta;
-        const key = uuid + name + icon;
-        this.icons[key] ??= {
-          ownerUuid: uuid,
-          name,
-          icon_name: icon,
-          last_seen: Date.now(),
-          show: false,
-        };
-        this.icons[key].last_seen = Date.now();
-      }
-    }
-    Object.entries(this.icons).forEach(([key, icon]) => {
-      if (Date.now() - icon.last_seen > ICON_SWITCH_STORE_DURATION) {
-        delete this.icons[key];
-      }
-    });
-    const iconValues = Object.values(this.icons);
-    if (
-      iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" &&
-      iconValues.at(-1)?.ownerUuid !== "xapp-status@cinnamon.org"
-    ) {
-      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
-    }
-    this.settings.setValue("icons", this.icons);
   }
   update_our_icon() {
     if (this.do_hide) {
@@ -624,7 +627,7 @@ var MyApplet = class extends IconApplet {
           this.reset_icons();
         });
         this._applet_context_menu.addMenuItem(menu_item_reset_icons_list, 0);
-        this.menu_item_panel_edit_mode = new PopupSwitchMenuItem(
+        this.menu_item_panel_edit_mode = new PopupSwitchMenuItem2(
           _("Panel Edit mode"),
           global.settings.get_boolean("panel-edit-mode"),
         );
@@ -635,7 +638,7 @@ var MyApplet = class extends IconApplet {
           this.menu_item_panel_edit_mode,
           0,
         );
-        this.menu_item_auto_hide = new PopupSwitchMenuItem(
+        this.menu_item_auto_hide = new PopupSwitchMenuItem2(
           _("Autohide"),
           this.do_autohide,
         );
@@ -646,28 +649,16 @@ var MyApplet = class extends IconApplet {
         this._applet_context_menu.addMenuItem(this.menu_item_auto_hide, 0);
       }
       this.menu_items_icon_section.removeAll();
-      Object.values(this.icons).forEach((icon) => {
-        const { name, show, icon_name } = icon;
-        const iconToggle = icon_name
-          ? new PopupSwitchIconMenuItem(
-              name,
-              show,
-              icon_name,
-              icon_name.includes("/")
-                ? St.IconType.FULLCOLOR
-                : St.IconType.SYMBOLIC,
-            )
-          : new PopupSwitchMenuItem(name, show);
-        iconToggle.connect("toggled", () => {
-          icon.show = !icon.show;
-          this.settings.setValue("icons", this.icons);
+      this.icon_config
+        .create_menu_items(() => {
           if (!this.do_hide) {
             this.toggle_hiding();
             this.toggle_hiding();
           }
+        })
+        .forEach((icon_toggle) => {
+          this.menu_items_icon_section.addMenuItem(icon_toggle);
         });
-        this.menu_items_icon_section.addMenuItem(iconToggle);
-      });
     }
   }
 };
