@@ -8,19 +8,23 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
+  if ((from && typeof from === "object") || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+        __defProp(to, key, {
+          get: () => from[key],
+          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+        });
   }
   return to;
 };
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __toCommonJS = (mod) =>
+  __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/applet.ts
 var applet_exports = {};
 __export(applet_exports, {
-  main: () => main
+  main: () => main,
 });
 module.exports = __toCommonJS(applet_exports);
 var {
@@ -30,7 +34,7 @@ var {
     St,
     GLib,
     Gio,
-    GdkPixbuf: { Pixbuf }
+    GdkPixbuf: { Pixbuf },
   },
   ui: {
     applet: { IconApplet },
@@ -39,10 +43,10 @@ var {
       PopupSeparatorMenuItem,
       PopupMenuItem,
       PopupSwitchMenuItem,
-      PopupSwitchIconMenuItem
+      PopupSwitchIconMenuItem,
     },
-    settings: { AppletSettings, BindingDirection }
-  }
+    settings: { AppletSettings, BindingDirection },
+  },
 } = imports;
 var UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
@@ -114,7 +118,7 @@ var MyApplet = class extends IconApplet {
       this.settings = new AppletSettings(
         this,
         "devtest-show-hide-applets@mohammad-sn",
-        this.instance_id
+        this.instance_id,
       );
       this.icons = this.settings.getValue("icons");
       Gtk.IconTheme.get_default().append_search_path(this.applet_path);
@@ -123,22 +127,20 @@ var MyApplet = class extends IconApplet {
       if (!this.icons_dir.query_exists(null)) {
         this.icons_dir.make_directory_with_parents(null);
       }
-      Gtk.IconTheme.get_default().append_search_path(
-        this.icons_dir.get_path()
-      );
+      Gtk.IconTheme.get_default().append_search_path(this.icons_dir.get_path());
       this.loadedPanel = this.panel;
       this.update_our_icon();
       this.bind_settings();
       this.update_autohide_tooltip();
       this.connected_on_panel_edit_mode_changed = global.settings.connect(
         "changed::panel-edit-mode",
-        () => this.on_panel_edit_mode_changed()
+        () => this.on_panel_edit_mode_changed(),
       );
       this.connected_on_entered = this.actor.connect(
         // "enter-event" works but I can't find it in the cinnamon repo: https://github.com/search?q=repo%3Alinuxmint%2Fcinnamon%20enter-event&type=code
         // @ts-expect-error types are wrong
         "enter-event",
-        () => this.on_entered()
+        () => this.on_entered(),
       );
       timeout_add_seconds_once(1, () => {
         this.update_icons();
@@ -149,7 +151,7 @@ var MyApplet = class extends IconApplet {
         "allocation-changed",
         () => {
           this.on_allocation_changed();
-        }
+        },
       );
       if (this.do_autohide) {
         this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
@@ -185,7 +187,10 @@ var MyApplet = class extends IconApplet {
         this._hideTimeoutId = null;
         this.auto_hide();
       });
-    } else if (this.do_hide && !global.settings.get_boolean("panel-edit-mode")) {
+    } else if (
+      this.do_hide &&
+      !global.settings.get_boolean("panel-edit-mode")
+    ) {
       this.toggle_hiding();
     }
   }
@@ -204,28 +209,28 @@ var MyApplet = class extends IconApplet {
           }
           if (this.menu_item_auto_hide) {
             this.menu_item_auto_hide["_switch"].setToggleState(
-              this.do_autohide
+              this.do_autohide,
             );
           }
           this.update_autohide_tooltip();
         },
-        null
+        null,
       );
       this.settings.bindProperty(
         BindingDirection.IN,
         "hoveractivates",
-        "hover_activates"
+        "hover_activates",
       );
       this.settings.bindProperty(
         BindingDirection.IN,
         "hoveractivateshide",
-        "hover_activates_hide"
+        "hover_activates_hide",
       );
       this.settings.bindProperty(BindingDirection.IN, "hidetime", "hide_time");
       this.settings.bindProperty(
         BindingDirection.IN,
         "hovertime",
-        "hover_time"
+        "hover_time",
       );
       this.settings.bindProperty(
         BindingDirection.IN,
@@ -234,12 +239,12 @@ var MyApplet = class extends IconApplet {
         () => {
           this.refresh_if_hidden();
         },
-        null
+        null,
       );
       this.settings.bindProperty(
         BindingDirection.IN,
         "hideuntilseparator",
-        "hide_until_separator"
+        "hide_until_separator",
       );
     } catch (error) {
       global.logError(error);
@@ -251,7 +256,9 @@ var MyApplet = class extends IconApplet {
     }
     try {
       const is_ico = icon_name.endsWith(".ico");
-      const dest_name = is_ico ? icon_name.replaceAll("/", "@").replace(".ico", ".png") : icon_name.replaceAll("/", "@");
+      const dest_name = is_ico
+        ? icon_name.replaceAll("/", "@").replace(".ico", ".png")
+        : icon_name.replaceAll("/", "@");
       const dest_file = this.icons_dir.get_child(dest_name);
       if (!dest_file.query_exists(null)) {
         const source_file = Gio.File.new_for_path(icon_name);
@@ -264,7 +271,7 @@ var MyApplet = class extends IconApplet {
             dest_file.get_path().replace(/\.ico$/u, ".png"),
             "png",
             null,
-            null
+            null,
           );
         } else {
           source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
@@ -282,7 +289,10 @@ var MyApplet = class extends IconApplet {
     const eligible = [];
     if (this.do_hide) {
       for (let i = ourIndex - 1; i > -1; i--) {
-        if (this.hide_until_separator && children[i]._applet._uuid === "separator@cinnamon.org") {
+        if (
+          this.hide_until_separator &&
+          children[i]._applet._uuid === "separator@cinnamon.org"
+        ) {
           break;
         }
         eligible.push(children[i]);
@@ -305,10 +315,17 @@ var MyApplet = class extends IconApplet {
   // logs say these children are `StBoxLayout` but `StBoxLayout` type has `no _applet`, even though it exists...
   // So we return `any`, even though it should be `StBoxLayout`.
   get_zone_children() {
-    return this.get_our_panel_zone().get_children();
+    try {
+      return this.get_our_panel_zone().get_children();
+    } catch (error) {
+      global.logError(error);
+      return [];
+    }
   }
   is_vertical() {
-    return this.orientation === St.Side.LEFT || this.orientation === St.Side.RIGHT;
+    return (
+      this.orientation === St.Side.LEFT || this.orientation === St.Side.RIGHT
+    );
   }
   // This is mostly about the xapps icon tray regularly "showing" its icons.
   on_allocation_changed() {
@@ -316,7 +333,8 @@ var MyApplet = class extends IconApplet {
     const now = GLib.get_monotonic_time();
     if (
       // 50ms
-      now - this.last_toggle_hiding_end < 5e4 || now - this.last_toggle_hiding_start < 5e4
+      now - this.last_toggle_hiding_end < 5e4 ||
+      now - this.last_toggle_hiding_start < 5e4
     ) {
       return;
     }
@@ -340,14 +358,14 @@ var MyApplet = class extends IconApplet {
     }
     if (this.connected_on_allocation_changed) {
       this.get_our_panel_zone().disconnect(
-        this.connected_on_allocation_changed
+        this.connected_on_allocation_changed,
       );
     }
     for (const id of [
       this._updateIconsTimeoutId,
       this._updatePopupMenuTimeoutId,
       this._reshowingHideTimeoutId,
-      this._hideTimeoutId
+      this._hideTimeoutId,
     ]) {
       if (id) {
         GLib.source_remove(id);
@@ -363,7 +381,11 @@ var MyApplet = class extends IconApplet {
     return true;
   }
   on_entered() {
-    if (!this.actor.hover && this.hover_activates && !global.settings.get_boolean("panel-edit-mode")) {
+    if (
+      !this.actor.hover &&
+      this.hover_activates &&
+      !global.settings.get_boolean("panel-edit-mode")
+    ) {
       timeout_add_once(this.hover_time, () => {
         if (this.actor.hover && (this.hover_activates_hide || !this.do_hide)) {
           this.toggle_hiding();
@@ -373,7 +395,7 @@ var MyApplet = class extends IconApplet {
   }
   on_panel_edit_mode_changed() {
     this.menu_item_panel_edit_mode.setToggleState(
-      global.settings.get_boolean("panel-edit-mode")
+      global.settings.get_boolean("panel-edit-mode"),
     );
     if (global.settings.get_boolean("panel-edit-mode")) {
       if (!this.do_hide) {
@@ -394,9 +416,7 @@ var MyApplet = class extends IconApplet {
   }
   reset_icons() {
     this._applet_context_menu.close(false);
-    const iconsBackup = JSON.parse(
-      JSON.stringify(this.icons)
-    );
+    const iconsBackup = JSON.parse(JSON.stringify(this.icons));
     this.icons = {};
     this.update_icons();
     Object.entries(iconsBackup).forEach(([key, { show }]) => {
@@ -417,7 +437,7 @@ var MyApplet = class extends IconApplet {
       () => {
         this.update_icons();
         return GLib.SOURCE_CONTINUE;
-      }
+      },
     );
     this._updatePopupMenuTimeoutId = GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT,
@@ -425,7 +445,7 @@ var MyApplet = class extends IconApplet {
       () => {
         this.update_popup_menu();
         return GLib.SOURCE_CONTINUE;
-      }
+      },
     );
   }
   toggle_hiding(refreshing = false) {
@@ -442,7 +462,10 @@ var MyApplet = class extends IconApplet {
       for (const child of this.get_eligible_children()) {
         const applet = child._applet;
         if (this.do_hide) {
-          if (this.hide_until_separator && applet._uuid === "separator@cinnamon.org") {
+          if (
+            this.hide_until_separator &&
+            applet._uuid === "separator@cinnamon.org"
+          ) {
             break;
           }
           if (applet._uuid === "systray@cinnamon.org") {
@@ -452,7 +475,7 @@ var MyApplet = class extends IconApplet {
                 this.alreadyHidden.push(systrayChild);
               }
               const key2 = applet._uuid + icon2.title;
-              if (this.icons[key2] && this.icons[key2].show) {
+              if (this.icons[key2]?.show) {
                 continue;
               }
               systrayChild.hide();
@@ -460,15 +483,13 @@ var MyApplet = class extends IconApplet {
             continue;
           }
           if (applet._uuid === "xapp-status@cinnamon.org") {
-            for (const xappChild of Object.values(
-              applet.statusIcons
-            )) {
+            for (const xappChild of Object.values(applet.statusIcons)) {
               const { name: name2, icon_name, visible } = xappChild.proxy;
               if (!visible && !refreshing) {
                 this.alreadyHidden.push(xappChild);
               }
               const key2 = applet._uuid + name2 + icon_name;
-              if (this.icons[key2] && this.icons[key2].show) {
+              if (this.icons[key2]?.show) {
                 continue;
               }
               xappChild.actor.hide();
@@ -480,7 +501,7 @@ var MyApplet = class extends IconApplet {
           }
           const { uuid, name, icon } = applet._meta;
           const key = uuid + name + icon;
-          if (this.icons[key] && this.icons[key].show) {
+          if (this.icons[key]?.show) {
             continue;
           }
           child.hide();
@@ -490,7 +511,9 @@ var MyApplet = class extends IconApplet {
           }
           if (applet._uuid === "systray@cinnamon.org") {
             try {
-              for (const systrayChild of child.get_first_child().get_children()) {
+              for (const systrayChild of child
+                .get_first_child()
+                .get_children()) {
                 if (!this.alreadyHidden.includes(systrayChild)) {
                   systrayChild.show();
                 }
@@ -500,18 +523,24 @@ var MyApplet = class extends IconApplet {
             }
           }
           if (applet._uuid === "xapp-status@cinnamon.org") {
-            for (const xappChild of Object.values(
-              applet.statusIcons
-            )) {
+            for (const xappChild of Object.values(applet.statusIcons)) {
               const { name, icon_name } = xappChild.proxy;
-              if (name.trim() !== "" && icon_name.trim() !== "" && !this.alreadyHidden.includes(xappChild)) {
+              if (
+                name.trim() !== "" &&
+                icon_name.trim() !== "" &&
+                !this.alreadyHidden.includes(xappChild)
+              ) {
                 xappChild.actor.show();
               }
             }
           }
         }
       }
-      if (!this.do_hide && this.do_autohide && !global.settings.get_boolean("panel-edit-mode")) {
+      if (
+        !this.do_hide &&
+        this.do_autohide &&
+        !global.settings.get_boolean("panel-edit-mode")
+      ) {
         this._hideTimeoutId = timeout_add_seconds_once(this.hide_time, () => {
           this._hideTimeoutId = null;
           this.auto_hide();
@@ -537,32 +566,32 @@ var MyApplet = class extends IconApplet {
       if (applet._uuid === "separator@cinnamon.org") {
         continue;
       } else if (applet._uuid === "xapp-status@cinnamon.org") {
-        Object.values(applet.statusIcons).forEach(
-          (icon) => {
-            const { name, icon_name } = icon.proxy;
-            if (name.trim() === "" || icon_name.trim() === "") {
-              return;
-            }
-            const key = applet._uuid + name + icon_name;
-            this.icons[key] ??= {
-              ownerUuid: applet._uuid,
-              name,
-              icon_name: icon_name ? this.ensure_local_icon(icon_name) : void 0,
-              last_seen: Date.now(),
-              show: false
-            };
-            this.icons[key].last_seen = Date.now();
+        Object.values(applet.statusIcons).forEach((icon) => {
+          const { name, icon_name } = icon.proxy;
+          if (name.trim() === "" || icon_name.trim() === "") {
+            return;
           }
-        );
+          const key = applet._uuid + name + icon_name;
+          this.icons[key] ??= {
+            ownerUuid: applet._uuid,
+            name,
+            icon_name: icon_name ? this.ensure_local_icon(icon_name) : void 0,
+            last_seen: Date.now(),
+            show: false,
+          };
+          this.icons[key].last_seen = Date.now();
+        });
       } else if (applet._uuid === "systray@cinnamon.org") {
-        for (const systrayIcon of childBoxLayout.get_first_child().get_children()) {
+        for (const systrayIcon of childBoxLayout
+          .get_first_child()
+          .get_children()) {
           const icon = systrayIcon.get_child();
           const key = applet._uuid + icon.title;
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
             name: icon.title,
             last_seen: Date.now(),
-            show: false
+            show: false,
           };
           this.icons[key].last_seen = Date.now();
         }
@@ -574,7 +603,7 @@ var MyApplet = class extends IconApplet {
           name,
           icon_name: icon,
           last_seen: Date.now(),
-          show: false
+          show: false,
         };
         this.icons[key].last_seen = Date.now();
       }
@@ -585,7 +614,10 @@ var MyApplet = class extends IconApplet {
       }
     });
     const iconValues = Object.values(this.icons);
-    if (iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" && iconValues.at(-1)?.ownerUuid !== "xapp-status@cinnamon.org") {
+    if (
+      iconValues[0]?.ownerUuid === "xapp-status@cinnamon.org" &&
+      iconValues.at(-1)?.ownerUuid !== "xapp-status@cinnamon.org"
+    ) {
       this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
     }
     this.settings.setValue("icons", this.icons);
@@ -614,7 +646,7 @@ var MyApplet = class extends IconApplet {
         this._applet_context_menu.addMenuItem(this.menu_items_icon_section, 0);
         this._applet_context_menu.addMenuItem(new PopupSeparatorMenuItem(), 0);
         const menu_item_reset_icons_list = new PopupMenuItem(
-          _("Reset icons list")
+          _("Reset icons list"),
         );
         menu_item_reset_icons_list.connect("activate", () => {
           this.reset_icons();
@@ -622,18 +654,18 @@ var MyApplet = class extends IconApplet {
         this._applet_context_menu.addMenuItem(menu_item_reset_icons_list, 0);
         this.menu_item_panel_edit_mode = new PopupSwitchMenuItem(
           _("Panel Edit mode"),
-          global.settings.get_boolean("panel-edit-mode")
+          global.settings.get_boolean("panel-edit-mode"),
         );
         this.menu_item_panel_edit_mode.connect("toggled", (item) => {
           global.settings.set_boolean("panel-edit-mode", item.state);
         });
         this._applet_context_menu.addMenuItem(
           this.menu_item_panel_edit_mode,
-          0
+          0,
         );
         this.menu_item_auto_hide = new PopupSwitchMenuItem(
           _("Autohide"),
-          this.do_autohide
+          this.do_autohide,
         );
         this.menu_item_auto_hide.connect("toggled", () => {
           this.do_autohide = !this.do_autohide;
@@ -642,15 +674,21 @@ var MyApplet = class extends IconApplet {
         this._applet_context_menu.addMenuItem(this.menu_item_auto_hide, 0);
       }
       this.menu_items_icon_section.removeAll();
-      Object.entries(this.icons).forEach(([key, { name, show, icon_name }]) => {
-        const iconToggle = icon_name ? new PopupSwitchIconMenuItem(
-          name,
-          show,
-          icon_name,
-          icon_name.includes("/") ? St.IconType.FULLCOLOR : St.IconType.SYMBOLIC
-        ) : new PopupSwitchMenuItem(name, show);
+      Object.values(this.icons).forEach((icon) => {
+        const { name, show, icon_name } = icon;
+        const iconToggle = icon_name
+          ? new PopupSwitchIconMenuItem(
+              name,
+              show,
+              icon_name,
+              icon_name.includes("/")
+                ? St.IconType.FULLCOLOR
+                : St.IconType.SYMBOLIC,
+            )
+          : new PopupSwitchMenuItem(name, show);
         iconToggle.connect("toggled", () => {
-          this.icons[key].show = !this.icons[key].show;
+          icon.show = !icon.show;
+          global.log("Saving..." + JSON.stringify(this.icons));
           this.settings.setValue("icons", this.icons);
           if (!this.do_hide) {
             this.toggle_hiding();

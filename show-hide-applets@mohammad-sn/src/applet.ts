@@ -24,6 +24,19 @@ type StatusIconInterfaceProxy = imports.gi.XApp.StatusIconInterfaceProxy;
 const UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
 
+// `applet._meta` example:
+// {"uuid":"network@cinnamon.org","name":"Network Manager","description":"Network manager applet","icon":"cs-network","state":1,"path":"/usr/share/cinnamon/applets/network@cinnamon.org","error":"","force_loaded":false}
+type AppletMeta = {
+  uuid: string;
+  name: string;
+  description: string;
+  icon: string;
+  state: number;
+  path: string;
+  error: string;
+  force_loaded: boolean;
+};
+
 // 7 days, since some apps use multiple distinct icons but only one at the time. It's not possible to identify correlated icons by app name (multiple apps can have the same name), so users unfortunately sometimes have to toggle different icon states "on" if that is an app that they always want to see.
 const ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1000;
 
@@ -123,7 +136,7 @@ class MyApplet extends IconApplet {
   > = {};
 
   // Menu items
-  menu_item_auto_hide!: imports.ui.popupMenu.PopupSwitchMenuItem;
+  menu_item_auto_hide: imports.ui.popupMenu.PopupSwitchMenuItem | undefined;
   menu_item_panel_edit_mode!: imports.ui.popupMenu.PopupSwitchMenuItem;
   menu_items_icon_section: imports.ui.popupMenu.PopupMenuSection | undefined;
 
@@ -171,7 +184,7 @@ class MyApplet extends IconApplet {
         this.icons_dir.make_directory_with_parents(null);
       }
       Gtk.IconTheme.get_default().append_search_path(
-        this.icons_dir.get_path() as string,
+        this.icons_dir.get_path()!,
       );
 
       this.loadedPanel = this.panel!;
@@ -387,9 +400,16 @@ class MyApplet extends IconApplet {
   // logs say these children are `StBoxLayout` but `StBoxLayout` type has `no _applet`, even though it exists...
   // So we return `any`, even though it should be `StBoxLayout`.
   get_zone_children() {
-    return (
-      this.get_our_panel_zone() as imports.gi.Clutter.Actor
-    ).get_children() as any;
+    try {
+      return (
+        (this.get_our_panel_zone() as imports.gi.Clutter.Actor)
+          // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
+          .get_children() as any
+      );
+    } catch (error) {
+      global.logError(error);
+      return [];
+    }
   }
 
   is_vertical() {
@@ -418,12 +438,12 @@ class MyApplet extends IconApplet {
     }
   }
 
-  on_applet_clicked() {
+  override on_applet_clicked() {
     this.toggle_hiding();
     return true;
   }
 
-  on_applet_removed_from_panel() {
+  override on_applet_removed_from_panel() {
     if (!this.do_hide) {
       this.toggle_hiding();
     }
@@ -454,7 +474,7 @@ class MyApplet extends IconApplet {
     }
   }
 
-  on_applet_middle_clicked() {
+  override on_applet_middle_clicked() {
     this.do_autohide = !this.do_autohide;
     if (this.menu_item_auto_hide) {
       this.menu_item_auto_hide["_switch"].setToggleState(this.do_autohide);
@@ -490,7 +510,7 @@ class MyApplet extends IconApplet {
     }
   }
 
-  on_orientation_changed(orientation: imports.gi.St.Side) {
+  override on_orientation_changed(orientation: imports.gi.St.Side) {
     this.orientation = orientation;
   }
 
@@ -578,8 +598,8 @@ class MyApplet extends IconApplet {
                 this.alreadyHidden.push(systrayChild);
               }
 
-              const key = applet._uuid + icon.title;
-              if (this.icons[key] && this.icons[key].show) {
+              const key = (applet._uuid + icon.title) as string;
+              if (this.icons[key]?.show) {
                 continue;
               }
 
@@ -600,7 +620,7 @@ class MyApplet extends IconApplet {
               }
 
               const key = applet._uuid + name + icon_name;
-              if (this.icons[key] && this.icons[key].show) {
+              if (this.icons[key]?.show) {
                 continue;
               }
 
@@ -614,9 +634,9 @@ class MyApplet extends IconApplet {
             this.alreadyHidden.push(child);
           }
 
-          const { uuid, name, icon } = applet._meta;
+          const { uuid, name, icon } = applet._meta as AppletMeta;
           const key = uuid + name + icon;
-          if (this.icons[key] && this.icons[key].show) {
+          if (this.icons[key]?.show) {
             continue;
           }
           child.hide();
@@ -688,7 +708,7 @@ class MyApplet extends IconApplet {
 
   update_icons() {
     for (const childBoxLayout of this.get_eligible_children()) {
-      const applet = childBoxLayout._applet as any;
+      const applet = childBoxLayout._applet;
       if (applet._uuid === "separator@cinnamon.org") {
         continue;
       } else if (applet._uuid === "xapp-status@cinnamon.org") {
@@ -724,10 +744,10 @@ class MyApplet extends IconApplet {
         // It's typeof St.Bin[], the buttons created here: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/files/usr/share/cinnamon/applets/systray%40cinnamon.org/applet.js#L147
         for (const systrayIcon of childBoxLayout
           .get_first_child()
-          .get_children() as any) {
+          .get_children()) {
           // CinnamonTrayIcon: https://github.com/linuxmint/cinnamon/blob/96cf2909241b1ce8a92577afcb66618e91b25d03/src/cinnamon-tray-icon.c#L20
           const icon = systrayIcon.get_child();
-          const key = applet._uuid + icon.title;
+          const key = (applet._uuid + icon.title) as string;
           // We have no names/paths of the icons themselves here
           this.icons[key] ??= {
             ownerUuid: applet._uuid,
@@ -738,10 +758,8 @@ class MyApplet extends IconApplet {
           this.icons[key].last_seen = Date.now();
         }
       } else {
-        // `applet._meta` shape:
-        // {"uuid":"network@cinnamon.org","name":"Network Manager","description":"Network manager applet","icon":"cs-network","state":1,"path":"/usr/share/cinnamon/applets/network@cinnamon.org","error":"","force_loaded":false}
-        const { uuid, name, icon } = applet._meta;
-        const key = uuid + name + icon;
+        const { uuid, name, icon } = applet._meta as AppletMeta;
+        const key: string = uuid + name + icon;
         this.icons[key] ??= {
           ownerUuid: uuid,
           name,
@@ -831,20 +849,22 @@ class MyApplet extends IconApplet {
       }
 
       this.menu_items_icon_section.removeAll();
-      Object.entries(this.icons).forEach(([key, { name, show, icon_name }]) => {
+      Object.values(this.icons).forEach((icon) => {
+        const { name, show, icon_name } = icon;
         const iconToggle = icon_name
           ? new PopupSwitchIconMenuItem(
               name,
               show,
               icon_name,
-              icon_name!.includes("/")
+              icon_name.includes("/")
                 ? St.IconType.FULLCOLOR
                 : St.IconType.SYMBOLIC,
             )
           : new PopupSwitchMenuItem(name, show);
         // @ts-expect-error types are wrong
         iconToggle.connect("toggled", () => {
-          this.icons[key].show = !this.icons[key].show;
+          icon.show = !icon.show;
+          global.log("Saving..." + JSON.stringify(this.icons));
           this.settings.setValue("icons", this.icons);
 
           // Refresh if currently hidden
