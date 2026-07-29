@@ -643,29 +643,31 @@ var MyApplet = class extends IconApplet {
         this._applet_context_menu.addMenuItem(this.menu_item_auto_hide, 0);
       }
       this.menu_items_icon_section.removeAll();
-      Object.values(this.icons).forEach((icon) => {
-        const { name, show, icon_name } = icon;
-        const iconToggle = icon_name
-          ? new PopupSwitchIconMenuItem(
-              name,
-              show,
-              icon_name,
-              icon_name.includes("/")
-                ? St.IconType.FULLCOLOR
-                : St.IconType.SYMBOLIC,
-            )
-          : new PopupSwitchMenuItem(name, show);
-        iconToggle.connect("toggled", () => {
-          icon.show = !icon.show;
-          global.log("Saving..." + JSON.stringify(this.icons));
-          this.settings.setValue("icons", this.icons);
-          if (!this.do_hide) {
-            this.toggle_hiding();
-            this.toggle_hiding();
-          }
+      for (let i = 0; i < 4; i++) {
+        Object.values(this.icons).forEach((icon) => {
+          const { name, show, icon_name } = icon;
+          const iconToggle = icon_name
+            ? new PopupSwitchIconMenuItem(
+                name,
+                show,
+                icon_name,
+                icon_name.includes("/")
+                  ? St.IconType.FULLCOLOR
+                  : St.IconType.SYMBOLIC,
+              )
+            : new PopupSwitchMenuItem(name, show);
+          iconToggle.connect("toggled", () => {
+            icon.show = !icon.show;
+            global.log("Saving..." + JSON.stringify(this.icons));
+            this.settings.setValue("icons", this.icons);
+            if (!this.do_hide) {
+              this.toggle_hiding();
+              this.toggle_hiding();
+            }
+          });
+          this.menu_items_icon_section.addMenuItem(iconToggle);
         });
-        this.menu_items_icon_section.addMenuItem(iconToggle);
-      });
+      }
     }
   }
 };

@@ -816,32 +816,35 @@ class MyApplet extends IconApplet {
       }
 
       this.menu_items_icon_section.removeAll();
-      Object.values(this.icons).forEach((icon) => {
-        const { name, show, icon_name } = icon;
-        const iconToggle = icon_name
-          ? new PopupSwitchIconMenuItem(
-              name,
-              show,
-              icon_name,
-              icon_name.includes("/")
-                ? St.IconType.FULLCOLOR
-                : St.IconType.SYMBOLIC,
-            )
-          : new PopupSwitchMenuItem(name, show);
-        // @ts-expect-error types are wrong
-        iconToggle.connect("toggled", () => {
-          icon.show = !icon.show;
-          global.log("Saving..." + JSON.stringify(this.icons));
-          this.settings.setValue("icons", this.icons);
+      // Loop is just for bug reporting purposes
+      for (let i = 0; i < 4; i++) {
+        Object.values(this.icons).forEach((icon) => {
+          const { name, show, icon_name } = icon;
+          const iconToggle = icon_name
+            ? new PopupSwitchIconMenuItem(
+                name,
+                show,
+                icon_name,
+                icon_name.includes("/")
+                  ? St.IconType.FULLCOLOR
+                  : St.IconType.SYMBOLIC,
+              )
+            : new PopupSwitchMenuItem(name, show);
+          // @ts-expect-error types are wrong
+          iconToggle.connect("toggled", () => {
+            icon.show = !icon.show;
+            global.log("Saving..." + JSON.stringify(this.icons));
+            this.settings.setValue("icons", this.icons);
 
-          // Refresh if currently hidden
-          if (!this.do_hide) {
-            this.toggle_hiding();
-            this.toggle_hiding();
-          }
+            // Refresh if currently hidden
+            if (!this.do_hide) {
+              this.toggle_hiding();
+              this.toggle_hiding();
+            }
+          });
+          this.menu_items_icon_section!.addMenuItem(iconToggle);
         });
-        this.menu_items_icon_section!.addMenuItem(iconToggle);
-      });
+      }
     }
   }
 }
