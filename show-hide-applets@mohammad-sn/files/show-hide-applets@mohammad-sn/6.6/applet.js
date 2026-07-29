@@ -27,12 +27,31 @@ __export(applet_exports, {
   main: () => main,
 });
 module.exports = __toCommonJS(applet_exports);
+
+// src/timeout.ts
+var {
+  gi: { GLib },
+} = imports;
+function timeout_add_once(interval, callback) {
+  return GLib.timeout_add(GLib.PRIORITY_DEFAULT, interval, () => {
+    callback();
+    return GLib.SOURCE_REMOVE;
+  });
+}
+function timeout_add_seconds_once(interval, callback) {
+  return GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, () => {
+    callback();
+    return GLib.SOURCE_REMOVE;
+  });
+}
+
+// src/applet.ts
 var {
   gettext,
   gi: {
     Gtk,
     St,
-    GLib,
+    GLib: GLib2,
     Gio,
     GdkPixbuf: { Pixbuf },
   },
@@ -49,26 +68,12 @@ var {
   },
 } = imports;
 var UUID = "show-hide-applets@mohammad-sn";
-gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
+gettext.bindtextdomain(UUID, GLib2.get_home_dir() + "/.local/share/locale");
 var ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1e3;
 function _(str) {
   return gettext.dgettext(UUID, str);
 }
-function timeout_add_once(interval, callback) {
-  return GLib.timeout_add(GLib.PRIORITY_DEFAULT, interval, () => {
-    callback();
-    return GLib.SOURCE_REMOVE;
-  });
-}
-function timeout_add_seconds_once(interval, callback) {
-  return GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, () => {
-    callback();
-    return GLib.SOURCE_REMOVE;
-  });
-}
 var MyApplet = class extends IconApplet {
-  settings;
-  orientation;
   // Settings-bound properties
   do_autohide;
   hover_activates;
@@ -83,10 +88,10 @@ var MyApplet = class extends IconApplet {
   last_toggle_hiding_end;
   last_toggle_hiding_start;
   loaded_panel;
-  monitor;
-  signal_manager;
   icons_dir;
   icons = {};
+  orientation;
+  settings;
   // Menu items
   menu_item_auto_hide;
   menu_item_panel_edit_mode;
@@ -196,7 +201,7 @@ var MyApplet = class extends IconApplet {
       });
       this.settings.bind("do_autohide", "do_autohide", () => {
         if (this.hide_timeout_id && !this.do_autohide) {
-          GLib.source_remove(this.hide_timeout_id);
+          GLib2.source_remove(this.hide_timeout_id);
           this.hide_timeout_id = null;
         } else if (this.do_autohide && this.do_hide) {
           this.auto_hide();
@@ -251,10 +256,10 @@ var MyApplet = class extends IconApplet {
   }
   get_eligible_children() {
     const children = this.get_zone_children();
-    const ourIndex = children.indexOf(this.actor);
+    const our_index = children.indexOf(this.actor);
     const eligible = [];
     if (this.do_hide) {
-      for (let i = ourIndex - 1; i > -1; i--) {
+      for (let i = our_index - 1; i > -1; i--) {
         if (
           this.hide_until_separator &&
           children[i]._applet._uuid === "separator@cinnamon.org"
@@ -264,7 +269,7 @@ var MyApplet = class extends IconApplet {
         eligible.push(children[i]);
       }
     } else {
-      for (let i = 0; i < ourIndex; i++) {
+      for (let i = 0; i < our_index; i++) {
         eligible.push(children[i]);
       }
     }
@@ -296,7 +301,7 @@ var MyApplet = class extends IconApplet {
   // This is mostly about the xapps icon tray regularly "showing" its icons.
   on_allocation_changed() {
     global.log("on_allocation_changed");
-    const now = GLib.get_monotonic_time();
+    const now = GLib2.get_monotonic_time();
     if (
       // 50ms
       now - this.last_toggle_hiding_end < 5e4 ||
@@ -334,7 +339,7 @@ var MyApplet = class extends IconApplet {
       this.hide_timeout_id,
     ]) {
       if (id) {
-        GLib.source_remove(id);
+        GLib2.source_remove(id);
       }
     }
   }
@@ -396,30 +401,30 @@ var MyApplet = class extends IconApplet {
     });
   }
   start_periodic_updaters() {
-    this.update_icons_timeout_id = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
+    this.update_icons_timeout_id = GLib2.timeout_add_seconds(
+      GLib2.PRIORITY_DEFAULT,
       30,
       () => {
         this.update_icons();
-        return GLib.SOURCE_CONTINUE;
+        return GLib2.SOURCE_CONTINUE;
       },
     );
-    this.update_popup_menu_timeout_id = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
+    this.update_popup_menu_timeout_id = GLib2.timeout_add_seconds(
+      GLib2.PRIORITY_DEFAULT,
       30,
       () => {
         this.update_popup_menu();
-        return GLib.SOURCE_CONTINUE;
+        return GLib2.SOURCE_CONTINUE;
       },
     );
   }
   toggle_hiding(refreshing = false) {
     try {
       if (this.hide_timeout_id) {
-        GLib.source_remove(this.hide_timeout_id);
+        GLib2.source_remove(this.hide_timeout_id);
         this.hide_timeout_id = null;
       }
-      this.last_toggle_hiding_start = GLib.get_monotonic_time();
+      this.last_toggle_hiding_start = GLib2.get_monotonic_time();
       this.update_our_icon();
       if (this.do_hide && !refreshing) {
         this.already_hidden = [];
@@ -515,7 +520,7 @@ var MyApplet = class extends IconApplet {
       }
       global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
       this.do_hide = !this.do_hide;
-      this.last_toggle_hiding_end = GLib.get_monotonic_time();
+      this.last_toggle_hiding_end = GLib2.get_monotonic_time();
     } catch (error) {
       global.logError(error);
     }

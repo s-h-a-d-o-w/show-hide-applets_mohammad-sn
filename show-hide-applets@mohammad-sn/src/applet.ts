@@ -1,3 +1,5 @@
+import { timeout_add_once, timeout_add_seconds_once } from "./timeout";
+
 const {
   gettext,
   gi: {
@@ -19,7 +21,6 @@ const {
     settings: { AppletSettings },
   },
 } = imports;
-type StatusIconInterfaceProxy = imports.gi.XApp.StatusIconInterfaceProxy;
 
 const UUID = "show-hide-applets@mohammad-sn";
 gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
@@ -36,6 +37,8 @@ type AppletMeta = {
   error: string;
   force_loaded: boolean;
 };
+type Side = imports.gi.St.Side;
+type StatusIconInterfaceProxy = imports.gi.XApp.StatusIconInterfaceProxy;
 
 // 7 days, since some apps use multiple distinct icons but only one at the time. It's not possible to identify correlated icons by app name (multiple apps can have the same name), so users unfortunately sometimes have to toggle different icon states "on" if that is an app that they always want to see.
 const ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -73,35 +76,7 @@ declare global {
 //   return out;
 // }
 
-/**
- * Polyfill for GLib.timeout_add_once (not in Cinnamon 6.6.9's GLib version).
- * Calls `callback` once after `interval` milliseconds, then removes the source.
- */
-function timeout_add_once(interval: number, callback: () => void): number {
-  return GLib.timeout_add(GLib.PRIORITY_DEFAULT, interval, () => {
-    callback();
-    return GLib.SOURCE_REMOVE;
-  });
-}
-
-/**
- * Polyfill for timeout_add_seconds_once (not in Cinnamon 6.6.9's GLib version).
- * Calls `callback` once after `interval` seconds, then removes the source.
- */
-function timeout_add_seconds_once(
-  interval: number,
-  callback: () => void,
-): number {
-  return GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, () => {
-    callback();
-    return GLib.SOURCE_REMOVE;
-  });
-}
-
 class MyApplet extends IconApplet {
-  settings!: imports.ui.settings.AppletSettings;
-  orientation: imports.gi.St.Side;
-
   // Settings-bound properties
   do_autohide!: boolean;
   hover_activates!: boolean;
@@ -117,8 +92,6 @@ class MyApplet extends IconApplet {
   last_toggle_hiding_end!: number;
   last_toggle_hiding_start!: number;
   loaded_panel!: imports.ui.panel.Panel;
-  monitor!: imports.gi.XApp.StatusIconMonitor;
-  signal_manager!: imports.misc.signalManager.SignalManager;
   icons_dir!: imports.gi.Gio.File;
   icons: Record<
     string,
@@ -131,6 +104,8 @@ class MyApplet extends IconApplet {
       icon_name?: string;
     }
   > = {};
+  orientation: Side;
+  settings!: imports.ui.settings.AppletSettings;
 
   // Menu items
   menu_item_auto_hide: imports.ui.popupMenu.PopupSwitchMenuItem | undefined;
@@ -150,7 +125,7 @@ class MyApplet extends IconApplet {
 
   constructor(
     metadata: any,
-    orientation: imports.gi.St.Side,
+    orientation: Side,
     panel_height: number,
     instance_id: number,
   ) {
@@ -333,11 +308,11 @@ class MyApplet extends IconApplet {
 
   get_eligible_children() {
     const children = this.get_zone_children();
-    const ourIndex = children.indexOf(this.actor);
+    const our_index = children.indexOf(this.actor);
     const eligible: any = [];
 
     if (this.do_hide) {
-      for (let i = ourIndex - 1; i > -1; i--) {
+      for (let i = our_index - 1; i > -1; i--) {
         if (
           this.hide_until_separator &&
           children[i]._applet._uuid === "separator@cinnamon.org"
@@ -348,7 +323,7 @@ class MyApplet extends IconApplet {
         eligible.push(children[i]);
       }
     } else {
-      for (let i = 0; i < ourIndex; i++) {
+      for (let i = 0; i < our_index; i++) {
         eligible.push(children[i]);
       }
     }
@@ -478,7 +453,7 @@ class MyApplet extends IconApplet {
     }
   }
 
-  override on_orientation_changed(orientation: imports.gi.St.Side) {
+  override on_orientation_changed(orientation: Side) {
     this.orientation = orientation;
   }
 
@@ -848,7 +823,7 @@ class MyApplet extends IconApplet {
 
 export function main(
   metadata: any,
-  orientation: imports.gi.St.Side,
+  orientation: Side,
   panel_height: number,
   instance_id: number,
 ) {
