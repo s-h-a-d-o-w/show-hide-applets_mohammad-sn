@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/linuxmint/cinnamon-spices-applets/"
 "issues\n"
-"POT-Creation-Date: 2026-07-29 14:22+0000\n"
+"POT-Creation-Date: 2026-07-30 15:05+0000\n"
 "PO-Revision-Date: 2017-04-11 13:36+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -19,17 +19,17 @@ msgstr ""
 "X-Generator: Poedit 1.8.11\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#. 3.0/applet.js:74 3.0/applet.js:336 6.6/applet.js:528
+#. 3.0/applet.js:74 3.0/applet.js:336 6.6/applet.js:563
 #, fuzzy
 msgid "Autohide ON"
 msgstr "自动隐藏"
 
-#. 3.0/applet.js:75 3.0/applet.js:337 6.6/applet.js:530
+#. 3.0/applet.js:75 3.0/applet.js:337 6.6/applet.js:565
 #, fuzzy
 msgid "Autohide OFF"
 msgstr "自动隐藏"
 
-#. 3.0/applet.js:145 6.6/applet.js:625
+#. 3.0/applet.js:145 6.6/applet.js:598
 msgid "Panel Edit mode"
 msgstr "面板编辑模式"
 
@@ -39,11 +39,11 @@ msgstr "添加小程序到面板"
 
 #. 3.0->settings-schema.json->autohide->description
 #. 6.6->settings-schema.json->do_autohide->description
-#. 3.0/applet.js:173 6.6/applet.js:636
+#. 3.0/applet.js:173 6.6/applet.js:609
 msgid "Autohide"
 msgstr "自动隐藏"
 
-#. 6.6/applet.js:618
+#. 6.6/applet.js:591
 msgid "Reset icons list"
 msgstr ""
 
