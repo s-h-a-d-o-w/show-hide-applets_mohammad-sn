@@ -4,14 +4,15 @@ If Cinnamon adds this applet on the very left of the right zone, **it is essenti
 
 Unlike past versions of this applet, you have to go into the right click menu and toggle _off_ icons that you want to hide. (This is so that icons that have never been in the tray before don't immediately disappear.)
 
-Tray icons for notifications are shockingly fragile. If you do something with this applet that makes them disappear, just make sure to turn their toggles on and they should reappear within a minute or two.
+### Troubleshooting
 
-Many tray icons result in the toggle menu getting cut off instead of being scrollable. This bug [has already been reported](https://github.com/linuxmint/cinnamon/issues/13908).
+- Tray icons for notifications are shockingly fragile. If you do something with this applet that makes them disappear, just make sure to turn their toggles on and they should reappear within a minute or two.
+- Many tray icons result in the toggle menu getting cut off instead of being scrollable. This bug [has already been reported](https://github.com/linuxmint/cinnamon/issues/13908).
 
 ### Specific contributions wanted
 
-1. Getting icon data (icon name or path) out of `systray@cinnamon.org`, so that we can show that icon in the popup menu.
-2. Somehow getting nicer names for icons would be great, particuarly for apps like Deezer that somehow don't provide anything readable to the Xapp Status Applet. The associated process name would probably be best.
+- Getting icon data (icon name or path) out of `systray@cinnamon.org`, so that we can show that icon in the popup menu.
+- Somehow getting nicer names for Xapp Status Applet icons would be great, particuarly for apps like Deezer that somehow don't provide anything readable. The associated process name would probably be best.
 
 ### Thanks to
 
