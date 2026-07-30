@@ -434,6 +434,9 @@ var MyApplet = class extends IconApplet {
       return;
     }
     if (this.autohideReshowing) {
+      timeout_add_once(50, () => {
+        this.refresh_if_hidden();
+      });
       this.refresh_if_hidden();
     }
   }
@@ -557,6 +560,9 @@ var MyApplet = class extends IconApplet {
                   return;
                 }
                 const key = owner_uuid + name + (icon_name ?? "");
+                global.log(
+                  `Toggling hiding for ${key} -> ${this.icon_config.icons[key]?.show}`,
+                );
                 if (!this.icon_config.icons[key]?.show) {
                   hideable_object.hide();
                 }

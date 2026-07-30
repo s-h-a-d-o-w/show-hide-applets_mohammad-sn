@@ -306,6 +306,11 @@ class MyApplet extends IconApplet {
     }
 
     if (this.autohideReshowing) {
+      // Seems like allocation event sometimes fires before the icons are actually shown.
+      timeout_add_once(50, () => {
+        this.refresh_if_hidden();
+      });
+      // ... but we also refresh immediately to prevent possible icon flashing.
       this.refresh_if_hidden();
     }
   }
@@ -451,6 +456,9 @@ class MyApplet extends IconApplet {
                 }
 
                 const key = owner_uuid + name + (icon_name ?? "");
+                global.log(
+                  `Toggling hiding for ${key} -> ${this.icon_config.icons[key]?.show}`,
+                );
                 if (!this.icon_config.icons[key]?.show) {
                   hideable_object.hide();
                 }
