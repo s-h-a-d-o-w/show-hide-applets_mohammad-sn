@@ -1,10 +1,12 @@
 This applet hides applets to the left of it, within the same zone. (Or on top with vertical panels.)
 
-By default, Cinnamon tends to add it on the very left of the right zone, so **it is essential** to enter the panel edit mode and move it to the right of what you want to hide!
+If Cinnamon adds this applet on the very left of the right zone, **it is essential** to enter the panel edit mode and move it to the right of what you want to hide!
 
-Many tray icons result in the toggle menu getting cut off instead of being scrollable. This bug [has already been reported](https://github.com/linuxmint/cinnamon/issues/13908).
+Unlike past versions of this applet, you have to go into the right click menu and toggle _off_ icons that you want to hide. (This is so that icons that have never been in the tray before don't immediately disappear.)
 
 Tray icons for notifications are shockingly fragile. If you do something with this applet that makes them disappear, just make sure to turn their toggles on and they should reappear within a minute or two.
+
+Many tray icons result in the toggle menu getting cut off instead of being scrollable. This bug [has already been reported](https://github.com/linuxmint/cinnamon/issues/13908).
 
 ### Specific contributions wanted
 

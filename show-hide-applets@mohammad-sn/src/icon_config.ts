@@ -177,7 +177,7 @@ export class IconConfig {
             owner_uuid,
             name,
             last_seen: Date.now(),
-            show: false,
+            show: true,
             icon_name,
           };
           this.icons[key].last_seen = Date.now();

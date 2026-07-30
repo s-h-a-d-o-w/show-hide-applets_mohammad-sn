@@ -152,7 +152,7 @@ var IconConfig = class {
             owner_uuid,
             name,
             last_seen: Date.now(),
-            show: false,
+            show: true,
             icon_name,
           };
           this.icons[key].last_seen = Date.now();
@@ -414,7 +414,6 @@ var MyApplet = class extends IconApplet {
   }
   // This is mostly about the xapps icon tray regularly "showing" its icons.
   on_allocation_changed() {
-    global.log("on_allocation_changed");
     const now = GLib2.get_monotonic_time();
     if (
       // 50ms
@@ -534,9 +533,6 @@ var MyApplet = class extends IconApplet {
                   return;
                 }
                 const key = owner_uuid + name + (icon_name ?? "");
-                global.log(
-                  `Toggling hiding for ${key} -> ${this.icon_config.icons[key]?.show}`,
-                );
                 if (!this.icon_config.icons[key]?.show) {
                   hideable_object.hide();
                 }
@@ -556,7 +552,6 @@ var MyApplet = class extends IconApplet {
           this.auto_hide();
         });
       }
-      global.log("Toggling hiding: " + this.do_hide + " -> " + !this.do_hide);
       this.do_hide = !this.do_hide;
       this.last_toggle_hiding_end = GLib2.get_monotonic_time();
     } catch (error) {
@@ -586,7 +581,6 @@ var MyApplet = class extends IconApplet {
     }
   }
   update_popup_menu() {
-    global.log("update_popup_menu");
     if (!this._applet_context_menu.isOpen) {
       if (!this.menu_items_icon_section) {
         this.menu_items_icon_section = new PopupMenuSection();

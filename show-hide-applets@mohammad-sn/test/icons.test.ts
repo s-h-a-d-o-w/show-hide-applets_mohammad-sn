@@ -170,7 +170,7 @@ describe("update", () => {
       owner_uuid: "foo@bar",
       name: "Foo",
       icon_name: "foo-icon",
-      show: false,
+      show: true,
     });
   });
 
