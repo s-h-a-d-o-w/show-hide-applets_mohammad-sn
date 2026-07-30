@@ -10,6 +10,14 @@ export const searchPaths: string[] = [];
 export const pixbufSavev = vi.fn();
 export const logError = vi.fn();
 
+export function fileHash(path: string): number {
+  let hash = 0;
+  for (let i = 0; i < path.length; i++) {
+    hash = (hash * 31 + path.codePointAt(i)!) % 4_294_967_296;
+  }
+  return hash;
+}
+
 class MockGioFile {
   path: string;
 
@@ -19,6 +27,10 @@ class MockGioFile {
 
   query_exists() {
     return vfs.has(this.path);
+  }
+
+  hash() {
+    return fileHash(this.path);
   }
 
   make_directory_with_parents() {

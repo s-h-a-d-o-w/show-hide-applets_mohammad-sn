@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { IconConfig, type IconsConfigData } from "../src/icons";
+import { IconConfig, type IconsConfigData } from "../src/icon_config";
 import {
   copyCalls,
+  fileHash,
   MockPopupSwitchIconMenuItem,
   MockPopupSwitchMenuItem,
   mkdirCalls,
@@ -97,25 +98,28 @@ describe("ensure_local_icon", () => {
     expect(copyCalls).toHaveLength(0);
   });
 
-  it("copies a file-based icon into the icons dir and returns its extensionless name", () => {
+  it("copies a file-based icon into the icons dir and returns the content hash name", () => {
     const store = make_store();
     vfs.add("/usr/share/foo.png");
+    const hash = fileHash("/usr/share/foo.png");
 
     const result = store.ensure_local_icon("/usr/share/foo.png");
 
-    expect(result).toBe("@usr@share@foo");
+    expect(result).toBe(String(hash));
     expect(copyCalls).toStrictEqual([
-      { from: "/usr/share/foo.png", to: ICONS_DIR + "/@usr@share@foo.png" },
+      { from: "/usr/share/foo.png", to: ICONS_DIR + "/" + hash + ".png" },
     ]);
   });
 
   it("does not copy again when the destination already exists", () => {
     const store = make_store();
-    vfs.add(ICONS_DIR + "/@usr@share@foo.png");
+    const hash = fileHash("/usr/share/foo.png");
+    vfs.add("/usr/share/foo.png");
+    vfs.add(ICONS_DIR + "/" + hash + ".png");
 
     const result = store.ensure_local_icon("/usr/share/foo.png");
 
-    expect(result).toBe("@usr@share@foo");
+    expect(result).toBe(String(hash));
     expect(copyCalls).toHaveLength(0);
   });
 
@@ -131,12 +135,13 @@ describe("ensure_local_icon", () => {
   it("converts .ico files to png via pixbuf", () => {
     const store = make_store();
     vfs.add("/opt/app.ico");
+    const hash = fileHash("/opt/app.ico");
 
     const result = store.ensure_local_icon("/opt/app.ico");
 
-    expect(result).toBe("@opt@app");
+    expect(result).toBe(String(hash));
     expect(pixbufSavev).toHaveBeenCalledWith(
-      ICONS_DIR + "/@opt@app.png",
+      ICONS_DIR + "/" + hash + ".png",
       "png",
       null,
       null,

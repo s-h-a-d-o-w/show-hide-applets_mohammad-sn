@@ -79,31 +79,23 @@ export class IconConfig {
   }
 
   ensure_local_icon(icon_name: string) {
-    if (!icon_name.includes("/")) {
+    if (!icon_name.includes("/") || !icon_name.includes(".")) {
       return icon_name;
     }
 
     try {
-      const is_ico = icon_name.endsWith(".ico");
-      const dest_name = is_ico
-        ? icon_name.replaceAll("/", "@").replace(".ico", ".png")
-        : icon_name.replaceAll("/", "@");
+      const source_file = Gio.File.new_for_path(icon_name);
+      if (!source_file.query_exists(null)) {
+        return undefined;
+      }
+
+      const file_extension = icon_name.split(".").at(-1)!;
+      const dest_name = source_file.hash() + ".png";
       const dest_file = this.icons_dir.get_child(dest_name);
-
       if (!dest_file.query_exists(null)) {
-        const source_file = Gio.File.new_for_path(icon_name);
-        if (!source_file.query_exists(null)) {
-          return undefined;
-        }
-
-        if (is_ico) {
+        if (file_extension !== "png") {
           const pixbuf = Pixbuf.new_from_file(icon_name);
-          pixbuf!.savev(
-            dest_file.get_path()!.replace(/\.ico$/u, ".png"),
-            "png",
-            null,
-            null,
-          );
+          pixbuf?.savev(dest_file.get_path()!, "png", null, null);
         } else {
           source_file.copy(dest_file, Gio.FileCopyFlags.NONE, null, null);
         }
