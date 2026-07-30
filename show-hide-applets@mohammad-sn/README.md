@@ -4,6 +4,8 @@ By default, Cinnamon tends to add it on the very left of the right zone, so **it
 
 Many tray icons result in the toggle menu getting cut off instead of being scrollable. This bug [has already been reported](https://github.com/linuxmint/cinnamon/issues/13908).
 
+Tray icons for notifications are shockingly fragile. If you do something with this applet that makes them disappear, just make sure to turn their toggles on and they should reappear within a minute or two.
+
 ### Specific contributions wanted
 
 1. Getting icon data (icon name or path) out of `systray@cinnamon.org`, so that we can show that icon in the popup menu.

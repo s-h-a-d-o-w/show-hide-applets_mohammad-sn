@@ -134,11 +134,8 @@ class MyApplet extends IconApplet {
       );
 
       // Initial populate + start periodic updaters
-      timeout_add_seconds_once(1, () => {
-        this.icon_config.update(this.get_eligible_children());
-        this.update_popup_menu();
-        this.start_periodic_updaters();
-      });
+      this.icon_config.update(this.get_eligible_children());
+      this.update_popup_menu();
 
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
         "allocation-changed",
@@ -231,7 +228,7 @@ class MyApplet extends IconApplet {
   get_eligible_children() {
     const children = this.get_zone_children();
     const our_index = children.indexOf(this.actor);
-    const eligible: any = [];
+    const eligible: any[] = [];
 
     if (this.do_hide) {
       for (let i = our_index - 1; i > -1; i--) {
@@ -257,7 +254,7 @@ class MyApplet extends IconApplet {
       }
     }
 
-    return eligible;
+    return this.do_hide ? eligible : eligible.reverse();
   }
 
   get_our_panel_zone() {
@@ -276,7 +273,7 @@ class MyApplet extends IconApplet {
       return (
         (this.get_our_panel_zone() as imports.gi.Clutter.Actor)
           // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
-          .get_children() as any
+          .get_children() as any[]
       );
     } catch (error) {
       global.logError(error);
@@ -304,6 +301,9 @@ class MyApplet extends IconApplet {
     ) {
       return;
     }
+
+    this.icon_config.update(this.get_eligible_children());
+    this.update_popup_menu();
 
     if (this.autohideReshowing) {
       // Seems like allocation event sometimes fires before the icons are actually shown.
@@ -408,26 +408,6 @@ class MyApplet extends IconApplet {
     timeout_add_once(10, () => {
       this._applet_context_menu.open(false);
     });
-  }
-
-  start_periodic_updaters() {
-    this.update_icons_timeout_id = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
-      30,
-      () => {
-        this.icon_config.update(this.get_eligible_children());
-        return GLib.SOURCE_CONTINUE;
-      },
-    );
-
-    this.update_popup_menu_timeout_id = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
-      30,
-      () => {
-        this.update_popup_menu();
-        return GLib.SOURCE_CONTINUE;
-      },
-    );
   }
 
   toggle_hiding(refreshing = false) {

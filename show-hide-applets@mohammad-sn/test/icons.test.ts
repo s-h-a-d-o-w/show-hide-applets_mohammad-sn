@@ -26,10 +26,6 @@ function regular_child(uuid: string, name: string, icon: string) {
   return { _applet: { _uuid: uuid, _meta: { uuid, name, icon } } };
 }
 
-function separator_child() {
-  return { _applet: { _uuid: "separator@cinnamon.org" } };
-}
-
 function xapp_child(icons: { name: string; icon_name: string }[]) {
   const statusIcons: Record<string, any> = {};
   icons.forEach((icon, i) => {
@@ -244,18 +240,6 @@ describe("update", () => {
     } finally {
       vi.useRealTimers();
     }
-  });
-
-  it("moves xapp-status icons to the bottom of the list", () => {
-    const store = make_store();
-
-    store.update([
-      xapp_child([{ name: "Vol", icon_name: "audio-volume" }]),
-      regular_child("foo@bar", "Foo", "foo-icon"),
-    ]);
-
-    const owners = Object.values(store.icons).map((icon) => icon.owner_uuid);
-    expect(owners).toStrictEqual(["foo@bar", "xapp-status@cinnamon.org"]);
   });
 
   it("persists after updating", () => {

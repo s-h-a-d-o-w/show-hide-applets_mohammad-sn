@@ -164,13 +164,6 @@ var IconConfig = class {
         delete this.icons[key];
       }
     });
-    const iconValues = Object.values(this.icons);
-    if (
-      iconValues[0]?.owner_uuid === "xapp-status@cinnamon.org" &&
-      iconValues.at(-1)?.owner_uuid !== "xapp-status@cinnamon.org"
-    ) {
-      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
-    }
     this.persist(this.icons);
   }
   // Rebuilds the icon list from scratch while preserving each icon's `show` state.
@@ -289,11 +282,8 @@ var MyApplet = class extends IconApplet {
         "enter-event",
         () => this.on_entered(),
       );
-      timeout_add_seconds_once(1, () => {
-        this.icon_config.update(this.get_eligible_children());
-        this.update_popup_menu();
-        this.start_periodic_updaters();
-      });
+      this.icon_config.update(this.get_eligible_children());
+      this.update_popup_menu();
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
         "allocation-changed",
         () => {
@@ -397,7 +387,7 @@ var MyApplet = class extends IconApplet {
         eligible.push(children[i]);
       }
     }
-    return eligible;
+    return this.do_hide ? eligible : eligible.reverse();
   }
   get_our_panel_zone() {
     if (this.locationLabel === "right") {
@@ -433,6 +423,8 @@ var MyApplet = class extends IconApplet {
     ) {
       return;
     }
+    this.icon_config.update(this.get_eligible_children());
+    this.update_popup_menu();
     if (this.autohideReshowing) {
       timeout_add_once(50, () => {
         this.refresh_if_hidden();
@@ -519,24 +511,6 @@ var MyApplet = class extends IconApplet {
     timeout_add_once(10, () => {
       this._applet_context_menu.open(false);
     });
-  }
-  start_periodic_updaters() {
-    this.update_icons_timeout_id = GLib2.timeout_add_seconds(
-      GLib2.PRIORITY_DEFAULT,
-      30,
-      () => {
-        this.icon_config.update(this.get_eligible_children());
-        return GLib2.SOURCE_CONTINUE;
-      },
-    );
-    this.update_popup_menu_timeout_id = GLib2.timeout_add_seconds(
-      GLib2.PRIORITY_DEFAULT,
-      30,
-      () => {
-        this.update_popup_menu();
-        return GLib2.SOURCE_CONTINUE;
-      },
-    );
   }
   toggle_hiding(refreshing = false) {
     try {

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["@ci-types/cjs", "node"]
   },
-  "include": [".", "../src/tsconfig.json"]
+  "include": ["."]
 }

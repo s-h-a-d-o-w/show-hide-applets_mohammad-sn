@@ -10,7 +10,7 @@
     "format": "oxfmt",
     "lint": "oxlint",
     "test": "vitest",
-    "typecheck": "tsc",
+    "typecheck": "tsc && tsc --project test/tsconfig.json",
     "prepare": "cd .. && husky show-hide-applets@mohammad-sn/.husky"
   },
   "devDependencies": {

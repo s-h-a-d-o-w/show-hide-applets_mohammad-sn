@@ -192,15 +192,6 @@ export class IconConfig {
       }
     });
 
-    // Make sure xapp-status@cinnamon.org icons are at the bottom of the list.
-    const iconValues = Object.values(this.icons);
-    if (
-      iconValues[0]?.owner_uuid === "xapp-status@cinnamon.org" &&
-      iconValues.at(-1)?.owner_uuid !== "xapp-status@cinnamon.org"
-    ) {
-      this.icons = Object.fromEntries(Object.entries(this.icons).reverse());
-    }
-
     this.persist(this.icons);
   }
 
