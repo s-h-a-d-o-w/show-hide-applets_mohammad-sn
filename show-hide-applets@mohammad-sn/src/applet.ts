@@ -496,10 +496,6 @@ class MyApplet extends IconApplet {
     // global.log("update_popup_menu");
     if (!this._applet_context_menu.isOpen) {
       if (!this.menu_items_icon_section) {
-        this.menu_items_icon_section = new PopupMenuSection();
-
-        this._applet_context_menu.addMenuItem(new PopupSeparatorMenuItem(), 0);
-        this._applet_context_menu.addMenuItem(this.menu_items_icon_section, 0);
         this._applet_context_menu.addMenuItem(new PopupSeparatorMenuItem(), 0);
 
         const menu_item_reset_icons_list = new PopupMenuItem(
@@ -531,6 +527,10 @@ class MyApplet extends IconApplet {
           this.update_autohide_tooltip();
         });
         this._applet_context_menu.addMenuItem(this.menu_item_auto_hide, 0);
+
+        this._applet_context_menu.addMenuItem(new PopupSeparatorMenuItem(), 0);
+        this.menu_items_icon_section = new PopupMenuSection();
+        this._applet_context_menu.addMenuItem(this.menu_items_icon_section, 0);
       }
 
       this.menu_items_icon_section.removeAll();
