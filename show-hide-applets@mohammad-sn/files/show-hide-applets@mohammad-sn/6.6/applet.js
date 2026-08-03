@@ -52,12 +52,23 @@ var {
     Gtk,
     Gio,
     GdkPixbuf: { Pixbuf },
+    GLib: GLib2,
   },
   ui: {
     popupMenu: { PopupSwitchMenuItem, PopupSwitchIconMenuItem },
   },
 } = imports;
 var ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1e3;
+function hash_icon(file, checksumType = GLib2.ChecksumType.SHA256) {
+  const [ok, contents] = file.load_contents(null);
+  if (!ok) {
+    return;
+  }
+  return (
+    // @ts-expect-error Works at runtime. Opus explains: "At runtime, cjs/gjs marshals a Uint8Array into that parameter perfectly fine — a Uint8Array is an array of byte-sized numbers. The number[] type is just an imprecise representation; you don't need to convert to a plain JS array."
+    GLib2.compute_checksum_for_bytes(checksumType, GLib2.Bytes.new(contents))
+  );
+}
 var IconConfig = class {
   icons;
   icons_dir;
@@ -82,7 +93,7 @@ var IconConfig = class {
         return void 0;
       }
       const file_extension = icon_name.split(".").at(-1);
-      const dest_name = source_file.hash() + ".png";
+      const dest_name = hash_icon(source_file) + ".png";
       const dest_file = this.icons_dir.get_child(dest_name);
       if (!dest_file.query_exists(null)) {
         if (file_extension !== "png") {
@@ -204,7 +215,7 @@ var IconConfig = class {
 // src/applet.ts
 var {
   gettext,
-  gi: { St: St2, GLib: GLib2 },
+  gi: { St: St2, GLib: GLib3 },
   ui: {
     applet: { IconApplet },
     popupMenu: {
@@ -217,7 +228,7 @@ var {
   },
 } = imports;
 var UUID = "show-hide-applets@mohammad-sn";
-gettext.bindtextdomain(UUID, GLib2.get_home_dir() + "/.local/share/locale");
+gettext.bindtextdomain(UUID, GLib3.get_home_dir() + "/.local/share/locale");
 function _(str) {
   return gettext.dgettext(UUID, str);
 }
@@ -343,7 +354,7 @@ var MyApplet = class extends IconApplet {
       });
       this.settings.bind("do_autohide", "do_autohide", () => {
         if (this.hide_timeout_id && !this.do_autohide) {
-          GLib2.source_remove(this.hide_timeout_id);
+          GLib3.source_remove(this.hide_timeout_id);
           this.hide_timeout_id = null;
         } else if (this.do_autohide && this.do_hide) {
           this.auto_hide();
@@ -414,7 +425,7 @@ var MyApplet = class extends IconApplet {
   }
   // This is mostly about the xapps icon tray regularly "showing" its icons.
   on_allocation_changed() {
-    const now = GLib2.get_monotonic_time();
+    const now = GLib3.get_monotonic_time();
     if (
       // 50ms
       now - this.last_toggle_hiding_end < 5e4 ||
@@ -457,7 +468,7 @@ var MyApplet = class extends IconApplet {
       this.hide_timeout_id,
     ]) {
       if (id) {
-        GLib2.source_remove(id);
+        GLib3.source_remove(id);
       }
     }
   }
@@ -514,10 +525,10 @@ var MyApplet = class extends IconApplet {
   toggle_hiding(refreshing = false) {
     try {
       if (this.hide_timeout_id) {
-        GLib2.source_remove(this.hide_timeout_id);
+        GLib3.source_remove(this.hide_timeout_id);
         this.hide_timeout_id = null;
       }
-      this.last_toggle_hiding_start = GLib2.get_monotonic_time();
+      this.last_toggle_hiding_start = GLib3.get_monotonic_time();
       this.update_our_icon();
       if (this.do_hide && !refreshing) {
         this.already_hidden = [];
@@ -553,7 +564,7 @@ var MyApplet = class extends IconApplet {
         });
       }
       this.do_hide = !this.do_hide;
-      this.last_toggle_hiding_end = GLib2.get_monotonic_time();
+      this.last_toggle_hiding_end = GLib3.get_monotonic_time();
     } catch (error) {
       global.logError(error);
     }

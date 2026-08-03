@@ -101,21 +101,33 @@ describe("ensure_local_icon", () => {
 
     const result = store.ensure_local_icon("/usr/share/foo.png");
 
-    expect(result).toBe(String(hash));
+    expect(result).toBe(hash);
     expect(copyCalls).toStrictEqual([
       { from: "/usr/share/foo.png", to: ICONS_DIR + "/" + hash + ".png" },
     ]);
   });
 
+  it("reuses the same name for files with identical contents", () => {
+    const store = make_store();
+    vfs.add("/usr/share/foo.png", "same-bytes");
+    vfs.add("/usr/share/copy.png", "same-bytes");
+
+    const first = store.ensure_local_icon("/usr/share/foo.png");
+    const second = store.ensure_local_icon("/usr/share/copy.png");
+
+    expect(second).toBe(first);
+    expect(copyCalls).toHaveLength(1);
+  });
+
   it("does not copy again when the destination already exists", () => {
     const store = make_store();
-    const hash = fileHash("/usr/share/foo.png");
     vfs.add("/usr/share/foo.png");
+    const hash = fileHash("/usr/share/foo.png");
     vfs.add(ICONS_DIR + "/" + hash + ".png");
 
     const result = store.ensure_local_icon("/usr/share/foo.png");
 
-    expect(result).toBe(String(hash));
+    expect(result).toBe(hash);
     expect(copyCalls).toHaveLength(0);
   });
 
@@ -135,7 +147,7 @@ describe("ensure_local_icon", () => {
 
     const result = store.ensure_local_icon("/opt/app.ico");
 
-    expect(result).toBe(String(hash));
+    expect(result).toBe(hash);
     expect(pixbufSavev).toHaveBeenCalledWith(
       ICONS_DIR + "/" + hash + ".png",
       "png",

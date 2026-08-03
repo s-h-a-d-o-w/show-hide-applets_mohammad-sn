@@ -1,8 +1,30 @@
+import { createHash } from "node:crypto";
 import { beforeEach, vi } from "vitest";
 
 // A tiny virtual filesystem so `Gio.File`/`GdkPixbuf` interactions in icons.ts
-// can be exercised without touching the real disk.
-export const vfs = new Set<string>();
+// can be exercised without touching the real disk. File contents default to the
+// path itself, so distinct files differ unless a test gives them equal content.
+class Vfs {
+  private readonly files = new Map<string, string>();
+
+  add(path: string, contents: string = path) {
+    this.files.set(path, contents);
+  }
+
+  has(path: string) {
+    return this.files.has(path);
+  }
+
+  contents(path: string) {
+    return this.files.get(path);
+  }
+
+  clear() {
+    this.files.clear();
+  }
+}
+
+export const vfs = new Vfs();
 
 export const mkdirCalls: string[] = [];
 export const copyCalls: { from: string; to: string }[] = [];
@@ -10,12 +32,13 @@ export const searchPaths: string[] = [];
 export const pixbufSavev = vi.fn();
 export const logError = vi.fn();
 
-export function fileHash(path: string): number {
-  let hash = 0;
-  for (let i = 0; i < path.length; i++) {
-    hash = (hash * 31 + path.codePointAt(i)!) % 4_294_967_296;
-  }
-  return hash;
+function sha256(contents: string) {
+  return createHash("sha256").update(contents).digest("hex");
+}
+
+// The checksum the applet is expected to derive for a file in the mock vfs.
+export function fileHash(path: string): string {
+  return sha256(vfs.contents(path) ?? path);
 }
 
 class MockGioFile {
@@ -29,8 +52,8 @@ class MockGioFile {
     return vfs.has(this.path);
   }
 
-  hash() {
-    return fileHash(this.path);
+  load_contents(): [boolean, string | undefined] {
+    return [vfs.has(this.path), vfs.contents(this.path)];
   }
 
   make_directory_with_parents() {
@@ -49,7 +72,7 @@ class MockGioFile {
 
   copy(dest: MockGioFile) {
     copyCalls.push({ from: this.path, to: dest.path });
-    vfs.add(dest.path);
+    vfs.add(dest.path, vfs.contents(this.path));
     return true;
   }
 }
@@ -117,6 +140,12 @@ const importsMock = {
     },
     GdkPixbuf: {
       Pixbuf: { new_from_file: () => ({ savev: pixbufSavev }) },
+    },
+    GLib: {
+      ChecksumType: { SHA256: "sha256" },
+      Bytes: { new: (contents: string) => contents },
+      compute_checksum_for_bytes: (_type: string, contents: string) =>
+        sha256(contents),
     },
   },
   ui: {

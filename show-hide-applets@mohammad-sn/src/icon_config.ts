@@ -9,6 +9,7 @@ const {
     Gtk,
     Gio,
     GdkPixbuf: { Pixbuf },
+    GLib,
   },
   ui: {
     popupMenu: { PopupSwitchMenuItem, PopupSwitchIconMenuItem },
@@ -54,6 +55,20 @@ type IconInfo = {
 // 7 days, since some apps use multiple distinct icons but only one at the time. It's not possible to identify correlated icons by app name (multiple apps can have the same name), so users unfortunately sometimes have to toggle different icon states "on" if that is an app that they always want to see.
 const ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1000;
 
+function hash_icon(
+  file: imports.gi.Gio.File,
+  checksumType = GLib.ChecksumType.SHA256,
+) {
+  const [ok, contents] = file.load_contents(null);
+  if (!ok) {
+    return;
+  }
+  return (
+    // @ts-expect-error Works at runtime. Opus explains: "At runtime, cjs/gjs marshals a Uint8Array into that parameter perfectly fine — a Uint8Array is an array of byte-sized numbers. The number[] type is just an imprecise representation; you don't need to convert to a plain JS array."
+    GLib.compute_checksum_for_bytes(checksumType, GLib.Bytes.new(contents))
+  );
+}
+
 // Keeps track of the icons seen in the panel zone, persists that state and
 // copies file-based icons into an applet-local directory.
 export class IconConfig {
@@ -90,7 +105,7 @@ export class IconConfig {
       }
 
       const file_extension = icon_name.split(".").at(-1)!;
-      const dest_name = source_file.hash() + ".png";
+      const dest_name = hash_icon(source_file) + ".png";
       const dest_file = this.icons_dir.get_child(dest_name);
       if (!dest_file.query_exists(null)) {
         if (file_extension !== "png") {
