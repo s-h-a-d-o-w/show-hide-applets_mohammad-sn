@@ -315,19 +315,15 @@ var MyApplet = class extends IconApplet {
     if (this.hide_timeout_id || !this.do_autohide) {
       return;
     }
-    let postpone = this.actor.hover && this.hover_activates;
+    let postpone = this.actor.hover;
     const children = this.get_zone_children();
     const p = children.indexOf(this.actor);
-    for (let i = 0; i < p; i++) {
+    for (let i = 0; i < p && !postpone; i++) {
       postpone ||= children[i].hover;
       if (children[i]._applet._menuManager) {
         postpone ||= children[i]._applet._menuManager._activeMenu;
-      }
-      if (children[i]._applet.menuManager) {
+      } else if (children[i]._applet.menuManager) {
         postpone ||= children[i]._applet.menuManager._activeMenu;
-      }
-      if (postpone) {
-        break;
       }
     }
     if (postpone) {

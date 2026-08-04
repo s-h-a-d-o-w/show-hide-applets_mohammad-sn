@@ -1,0 +1,14 @@
+{
+  "features": {
+    "ghcr.io/devcontainers-extra/features/apt-get-packages": {
+      "version": "1.0.8",
+      "resolved": "ghcr.io/devcontainers-extra/features/apt-get-packages@sha256:776fa11c30c50fa91d5e1bf050444b0f130827457109c349db92e8e126b750ec",
+      "integrity": "sha256:776fa11c30c50fa91d5e1bf050444b0f130827457109c349db92e8e126b750ec"
+    },
+    "ghcr.io/s-h-a-d-o-w/devcontainers-features/js-base": {
+      "version": "1.2.2",
+      "resolved": "ghcr.io/s-h-a-d-o-w/devcontainers-features/js-base@sha256:383fc46f87a36be22b1472e0ca54dab3801335d4b44d2be0f4302d1f207dcd1e",
+      "integrity": "sha256:383fc46f87a36be22b1472e0ca54dab3801335d4b44d2be0f4302d1f207dcd1e"
+    }
+  }
+}

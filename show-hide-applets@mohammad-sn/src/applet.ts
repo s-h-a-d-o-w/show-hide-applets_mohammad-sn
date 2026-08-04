@@ -162,19 +162,16 @@ class MyApplet extends IconApplet {
     }
 
     // postpone auto hide if any of the eligible applets are hovered or have an active menu
-    let postpone = this.actor.hover && this.hover_activates;
+    let postpone = this.actor.hover;
     const children = this.get_zone_children();
     const p = children.indexOf(this.actor);
-    for (let i = 0; i < p; i++) {
+    for (let i = 0; i < p && !postpone; i++) {
       postpone ||= children[i].hover;
+
       if (children[i]._applet._menuManager) {
         postpone ||= children[i]._applet._menuManager._activeMenu;
-      }
-      if (children[i]._applet.menuManager) {
+      } else if (children[i]._applet.menuManager) {
         postpone ||= children[i]._applet.menuManager._activeMenu;
-      }
-      if (postpone) {
-        break;
       }
     }
     if (postpone) {
