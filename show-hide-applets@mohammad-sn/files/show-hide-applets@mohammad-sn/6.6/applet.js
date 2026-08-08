@@ -243,7 +243,7 @@ var MyApplet = class extends IconApplet {
   hide_until_separator;
   // Runtime state
   do_hide;
-  already_hidden;
+  hidden_by_us;
   last_toggle_hiding_end;
   last_toggle_hiding_start;
   loaded_panel;
@@ -258,11 +258,13 @@ var MyApplet = class extends IconApplet {
   connected_on_panel_edit_mode_changed;
   connected_on_entered;
   connected_on_allocation_changed;
+  connected_on_queue_relayout;
   // Timeout IDs
   hide_timeout_id = null;
   reshowing_hide_timeout_id = null;
   update_icons_timeout_id = null;
   update_popup_menu_timeout_id = null;
+  queue_relayout_timeout_id = null;
   constructor(metadata, orientation, panel_height, instance_id) {
     super(orientation, panel_height, instance_id);
     this.orientation = orientation;
@@ -272,7 +274,7 @@ var MyApplet = class extends IconApplet {
     this.last_toggle_hiding_start = 0;
     this.last_toggle_hiding_end = 0;
     this.do_hide = true;
-    this.already_hidden = [];
+    this.hidden_by_us = /* @__PURE__ */ new Set();
     try {
       this.bind_settings();
       this.icon_config = new IconConfig(
@@ -298,7 +300,19 @@ var MyApplet = class extends IconApplet {
       this.connected_on_allocation_changed = this.get_our_panel_zone().connect(
         "allocation-changed",
         () => {
-          this.on_allocation_changed();
+          this.on_applets_changed();
+        },
+      );
+      this.connected_on_queue_relayout = this.get_our_panel_zone().connect(
+        "queue-relayout",
+        () => {
+          if (this.queue_relayout_timeout_id) {
+            GLib3.source_remove(this.queue_relayout_timeout_id);
+          }
+          this.queue_relayout_timeout_id = timeout_add_once(200, () => {
+            this.queue_relayout_timeout_id = null;
+            this.on_applets_changed();
+          });
         },
       );
       if (this.do_autohide) {
@@ -420,7 +434,7 @@ var MyApplet = class extends IconApplet {
     );
   }
   // This is mostly about the xapps icon tray regularly "showing" its icons.
-  on_allocation_changed() {
+  on_applets_changed() {
     const now = GLib3.get_monotonic_time();
     if (
       // 50ms
@@ -457,11 +471,15 @@ var MyApplet = class extends IconApplet {
         this.connected_on_allocation_changed,
       );
     }
+    if (this.connected_on_queue_relayout) {
+      this.get_our_panel_zone().disconnect(this.connected_on_queue_relayout);
+    }
     for (const id of [
       this.update_icons_timeout_id,
       this.update_popup_menu_timeout_id,
       this.reshowing_hide_timeout_id,
       this.hide_timeout_id,
+      this.queue_relayout_timeout_id,
     ]) {
       if (id) {
         GLib3.source_remove(id);
@@ -507,7 +525,7 @@ var MyApplet = class extends IconApplet {
   refresh_if_hidden() {
     if (!this.do_hide) {
       this.do_hide = true;
-      this.toggle_hiding(true);
+      this.toggle_hiding();
     }
   }
   reset_icons() {
@@ -518,7 +536,7 @@ var MyApplet = class extends IconApplet {
       this._applet_context_menu.open(false);
     });
   }
-  toggle_hiding(refreshing = false) {
+  toggle_hiding() {
     try {
       if (this.hide_timeout_id) {
         GLib3.source_remove(this.hide_timeout_id);
@@ -526,28 +544,30 @@ var MyApplet = class extends IconApplet {
       }
       this.last_toggle_hiding_start = GLib3.get_monotonic_time();
       this.update_our_icon();
-      if (this.do_hide && !refreshing) {
-        this.already_hidden = [];
-      }
       for (const child of this.get_eligible_children()) {
         this.icon_config
           .extract_icon_infos(child)
           .forEach(
             ({ owner_uuid, name, icon_name, visible, hideable_object }) => {
               if (this.do_hide) {
-                if (!visible && !refreshing) {
-                  this.already_hidden.push(hideable_object);
+                if (!visible && !this.hidden_by_us.has(hideable_object)) {
                   return;
                 }
                 const key = owner_uuid + name + (icon_name ?? "");
                 if (!this.icon_config.icons[key]?.show) {
                   hideable_object.hide();
+                  this.hidden_by_us.add(hideable_object);
+                } else if (this.hidden_by_us.delete(hideable_object)) {
+                  hideable_object.show();
                 }
-              } else if (!this.already_hidden.includes(hideable_object)) {
+              } else if (this.hidden_by_us.has(hideable_object)) {
                 hideable_object.show();
               }
             },
           );
+      }
+      if (!this.do_hide) {
+        this.hidden_by_us.clear();
       }
       if (
         !this.do_hide &&
