@@ -439,27 +439,24 @@ class MyApplet extends IconApplet {
       this.update_our_icon();
 
       for (const child of this.get_eligible_children()) {
-        this.icon_config
-          .extract_icon_infos(child)
-          .forEach(
-            ({ owner_uuid, name, icon_name, visible, hideable_object }) => {
-              if (this.do_hide) {
-                if (!visible && !this.hidden_by_us.has(hideable_object)) {
-                  return;
-                }
+        this.icon_config.extract_icon_infos(child).forEach((icon_info) => {
+          const { visible, hideable_object } = icon_info;
+          if (this.do_hide) {
+            if (!visible && !this.hidden_by_us.has(hideable_object)) {
+              return;
+            }
 
-                const key = owner_uuid + name + (icon_name ?? "");
-                if (!this.icon_config.icons[key]?.show) {
-                  hideable_object.hide();
-                  this.hidden_by_us.add(hideable_object);
-                } else if (this.hidden_by_us.delete(hideable_object)) {
-                  hideable_object.show();
-                }
-              } else if (this.hidden_by_us.has(hideable_object)) {
-                hideable_object.show();
-              }
-            },
-          );
+            const key = IconConfig.get_icon_key(icon_info);
+            if (!this.icon_config.icons[key]?.show) {
+              hideable_object.hide();
+              this.hidden_by_us.add(hideable_object);
+            } else if (this.hidden_by_us.delete(hideable_object)) {
+              hideable_object.show();
+            }
+          } else if (this.hidden_by_us.has(hideable_object)) {
+            hideable_object.show();
+          }
+        });
       }
 
       if (!this.do_hide) {

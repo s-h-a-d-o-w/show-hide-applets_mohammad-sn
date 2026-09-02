@@ -173,12 +173,12 @@ describe("ensure_local_icon", () => {
 });
 
 describe("update", () => {
-  it("records a regular applet keyed by uuid + name + icon", () => {
+  it("records a regular applet keyed by uuid + icon", () => {
     const store = make_store();
 
     store.update([regular_child("foo@bar", "Foo", "foo-icon")]);
 
-    expect(store.icons["foo@barFoofoo-icon"]).toMatchObject({
+    expect(store.icons["foo@barfoo-icon"]).toMatchObject({
       owner_uuid: "foo@bar",
       name: "Foo",
       icon_name: "foo-icon",
@@ -198,7 +198,7 @@ describe("update", () => {
     ]);
 
     const keys = Object.keys(store.icons);
-    expect(keys).toStrictEqual(["xapp-status@cinnamon.orgVolaudio-volume"]);
+    expect(keys).toStrictEqual(["xapp-status@cinnamon.orgaudio-volume"]);
     expect(store.icons[keys[0]!]).toMatchObject({
       owner_uuid: "xapp-status@cinnamon.org",
       name: "Vol",
@@ -226,13 +226,13 @@ describe("update", () => {
       const store = make_store();
       vi.setSystemTime(new Date(1000));
       store.update([regular_child("foo@bar", "Foo", "foo-icon")]);
-      store.icons["foo@barFoofoo-icon"]!.show = true;
+      store.icons["foo@barfoo-icon"]!.show = true;
 
       vi.setSystemTime(new Date(5000));
       store.update([regular_child("foo@bar", "Foo", "foo-icon")]);
 
-      expect(store.icons["foo@barFoofoo-icon"]!.last_seen).toBe(5000);
-      expect(store.icons["foo@barFoofoo-icon"]!.show).toBe(true);
+      expect(store.icons["foo@barfoo-icon"]!.last_seen).toBe(5000);
+      expect(store.icons["foo@barfoo-icon"]!.show).toBe(true);
     } finally {
       vi.useRealTimers();
     }
@@ -268,11 +268,11 @@ describe("reset", () => {
   it("rebuilds the list while preserving the show state", () => {
     const store = make_store();
     store.update([regular_child("foo@bar", "Foo", "foo-icon")]);
-    store.icons["foo@barFoofoo-icon"]!.show = true;
+    store.icons["foo@barfoo-icon"]!.show = true;
 
     store.reset([regular_child("foo@bar", "Foo", "foo-icon")]);
 
-    expect(store.icons["foo@barFoofoo-icon"]!.show).toBe(true);
+    expect(store.icons["foo@barfoo-icon"]!.show).toBe(true);
   });
 
   it("drops entries that are no longer present", () => {
@@ -284,7 +284,7 @@ describe("reset", () => {
 
     store.reset([regular_child("foo@bar", "Foo", "foo-icon")]);
 
-    expect(Object.keys(store.icons)).toStrictEqual(["foo@barFoofoo-icon"]);
+    expect(Object.keys(store.icons)).toStrictEqual(["foo@barfoo-icon"]);
   });
 });
 

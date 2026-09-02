@@ -55,6 +55,21 @@ type IconInfo = {
 // 7 days, since some apps use multiple distinct icons but only one at the time. It's not possible to identify correlated icons by app name (multiple apps can have the same name), so users unfortunately sometimes have to toggle different icon states "on" if that is an app that they always want to see.
 const ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1000;
 
+// Some apps embed volatile data in their icon title (e.g. SABnzbd progress), so only
+// the stable part of the name is kept across sightings.
+function common_prefix(current: string, next: string) {
+  let length = 0;
+  while (
+    length < current.length &&
+    length < next.length &&
+    current[length] === next[length]
+  ) {
+    length++;
+  }
+
+  return length === 0 ? next : current.slice(0, length).trim();
+}
+
 function hash_icon(
   file: imports.gi.Gio.File,
   checksumType = GLib.ChecksumType.SHA256,
@@ -124,6 +139,12 @@ export class IconConfig {
     }
   }
 
+  // `name` is excluded from the key when an icon is available, since
+  // some apps embed volatile data (e.g. progress) in their icon name.
+  static get_icon_key({ owner_uuid, name, icon_name }: IconInfo) {
+    return owner_uuid + (icon_name ?? name);
+  }
+
   extract_icon_infos(child: any): IconInfo[] {
     const applet = child._applet;
     if (applet._uuid === "xapp-status@cinnamon.org") {
@@ -185,19 +206,24 @@ export class IconConfig {
   // prunes stale entries, keeps xapp-status icons at the bottom and persists.
   update(eligible_children: any[]) {
     for (const child of eligible_children) {
-      this.extract_icon_infos(child).forEach(
-        ({ owner_uuid, name, icon_name }) => {
-          const key = owner_uuid + name + (icon_name ?? "");
-          this.icons[key] ??= {
+      this.extract_icon_infos(child).forEach((icon_info) => {
+        const { owner_uuid, name, icon_name } = icon_info;
+        const key = IconConfig.get_icon_key(icon_info);
+
+        const icon = this.icons[key];
+        if (icon) {
+          icon.name = common_prefix(icon.name, name);
+          icon.last_seen = Date.now();
+        } else {
+          this.icons[key] = {
             owner_uuid,
             name,
             last_seen: Date.now(),
             show: true,
             icon_name,
           };
-          this.icons[key].last_seen = Date.now();
-        },
-      );
+        }
+      });
     }
 
     Object.entries(this.icons).forEach(([key, icon]) => {
@@ -225,7 +251,7 @@ export class IconConfig {
     });
   }
 
-  // Builds a switch menu item for each stored icon. `on_toggle` applies to each individual toggle.
+  // Builds a switch menu item for each stored icon.
   create_menu_items(on_toggle: () => void) {
     return Object.values(this.icons).map((icon) => {
       const { name, show, icon_name } = icon;

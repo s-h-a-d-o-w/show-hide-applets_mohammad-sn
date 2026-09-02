@@ -59,6 +59,17 @@ var {
   },
 } = imports;
 var ICON_SWITCH_STORE_DURATION = 7 * 24 * 60 * 60 * 1e3;
+function common_prefix(current, next) {
+  let length = 0;
+  while (
+    length < current.length &&
+    length < next.length &&
+    current[length] === next[length]
+  ) {
+    length++;
+  }
+  return length === 0 ? next : current.slice(0, length).trim();
+}
 function hash_icon(file, checksumType = GLib2.ChecksumType.SHA256) {
   const [ok, contents] = file.load_contents(null);
   if (!ok) {
@@ -69,7 +80,7 @@ function hash_icon(file, checksumType = GLib2.ChecksumType.SHA256) {
     GLib2.compute_checksum_for_bytes(checksumType, GLib2.Bytes.new(contents))
   );
 }
-var IconConfig = class {
+var IconConfig = class _IconConfig {
   icons;
   icons_dir;
   persist;
@@ -108,6 +119,11 @@ var IconConfig = class {
       global.logError(error);
       return void 0;
     }
+  }
+  // `name` is excluded from the key when an icon is available, since
+  // some apps embed volatile data (e.g. progress) in their icon name.
+  static get_icon_key({ owner_uuid, name, icon_name }) {
+    return owner_uuid + (icon_name ?? name);
   }
   extract_icon_infos(child) {
     const applet = child._applet;
@@ -156,19 +172,23 @@ var IconConfig = class {
   // prunes stale entries, keeps xapp-status icons at the bottom and persists.
   update(eligible_children) {
     for (const child of eligible_children) {
-      this.extract_icon_infos(child).forEach(
-        ({ owner_uuid, name, icon_name }) => {
-          const key = owner_uuid + name + (icon_name ?? "");
-          this.icons[key] ??= {
+      this.extract_icon_infos(child).forEach((icon_info) => {
+        const { owner_uuid, name, icon_name } = icon_info;
+        const key = _IconConfig.get_icon_key(icon_info);
+        const icon = this.icons[key];
+        if (icon) {
+          icon.name = common_prefix(icon.name, name);
+          icon.last_seen = Date.now();
+        } else {
+          this.icons[key] = {
             owner_uuid,
             name,
             last_seen: Date.now(),
             show: true,
             icon_name,
           };
-          this.icons[key].last_seen = Date.now();
-        },
-      );
+        }
+      });
     }
     Object.entries(this.icons).forEach(([key, icon]) => {
       if (Date.now() - icon.last_seen > ICON_SWITCH_STORE_DURATION) {
@@ -188,7 +208,7 @@ var IconConfig = class {
       }
     });
   }
-  // Builds a switch menu item for each stored icon. `on_toggle` applies to each individual toggle.
+  // Builds a switch menu item for each stored icon.
   create_menu_items(on_toggle) {
     return Object.values(this.icons).map((icon) => {
       const { name, show, icon_name } = icon;
@@ -545,26 +565,23 @@ var MyApplet = class extends IconApplet {
       this.last_toggle_hiding_start = GLib3.get_monotonic_time();
       this.update_our_icon();
       for (const child of this.get_eligible_children()) {
-        this.icon_config
-          .extract_icon_infos(child)
-          .forEach(
-            ({ owner_uuid, name, icon_name, visible, hideable_object }) => {
-              if (this.do_hide) {
-                if (!visible && !this.hidden_by_us.has(hideable_object)) {
-                  return;
-                }
-                const key = owner_uuid + name + (icon_name ?? "");
-                if (!this.icon_config.icons[key]?.show) {
-                  hideable_object.hide();
-                  this.hidden_by_us.add(hideable_object);
-                } else if (this.hidden_by_us.delete(hideable_object)) {
-                  hideable_object.show();
-                }
-              } else if (this.hidden_by_us.has(hideable_object)) {
-                hideable_object.show();
-              }
-            },
-          );
+        this.icon_config.extract_icon_infos(child).forEach((icon_info) => {
+          const { visible, hideable_object } = icon_info;
+          if (this.do_hide) {
+            if (!visible && !this.hidden_by_us.has(hideable_object)) {
+              return;
+            }
+            const key = IconConfig.get_icon_key(icon_info);
+            if (!this.icon_config.icons[key]?.show) {
+              hideable_object.hide();
+              this.hidden_by_us.add(hideable_object);
+            } else if (this.hidden_by_us.delete(hideable_object)) {
+              hideable_object.show();
+            }
+          } else if (this.hidden_by_us.has(hideable_object)) {
+            hideable_object.show();
+          }
+        });
       }
       if (!this.do_hide) {
         this.hidden_by_us.clear();
